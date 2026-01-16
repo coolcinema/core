@@ -1,10 +1,10 @@
 {
   "name": "coolcinema-core",
-  "private": true,  // Важно! Корень монорепо никогда не публикуется
+  "private": true,
   "version": "1.0.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "build": "pnpm -r build" // Удобный алиас для сборки всего
+    "build": "pnpm -r build"
   },
   "engines": {
     "node": ">=18",
