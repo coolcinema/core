@@ -10,6 +10,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    # Переменная нужна на всех шагах (install, build, publish)
+    env:
+      COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -25,8 +28,4 @@ jobs:
       - run: pnpm -r build
 
       # Публикуем.
-      # Важно: мапим системный токен GitHub Actions на нашу переменную,
-      # которую ожидает .npmrc
       - run: pnpm -r publish --no-git-checks
-        env:
-          COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
