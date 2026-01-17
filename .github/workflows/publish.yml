@@ -1,21 +1,27 @@
-name: Release
+name: Publish Packages
 
 on:
   push:
     branches: [main]
-
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+    paths:
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
 
 jobs:
-  release:
+  publish:
+    # Избегаем запуска на собственных коммитах
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
-      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v3
         with:
@@ -24,19 +30,31 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@coolcinema"
           cache: "pnpm"
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Generate code
+      - name: Generate code and update version
         working-directory: packages/registry
-        run: pnpm generate
+        run: |
+          pnpm generate
+          pnpm version patch --no-git-tag-version
 
-      - name: Create Release Pull Request or Publish
-        uses: changesets/action@v1
-        with:
-          publish: pnpm release
-          commit: "chore: release packages"
+      - name: Build packages
+        run: pnpm -r build
+
+      - name: Publish packages
+        run: pnpm -r publish --no-git-checks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(release): update registry code and version [skip ci]"
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
+          file_pattern: "packages/registry/*"
