@@ -11,12 +11,13 @@ jobs:
       contents: write # <--- ВАЖНО: разрешить запись в репо
       packages: write
     env:
-      COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.COOLCINEMA_GH_PKG_TOKEN }}
     steps:
+      # 1. Checkout (обязательно с токеном и ref!)
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main # Важно для пуша!
+          token: ${{ secrets.COOLCINEMA_GH_PKG_TOKEN }} # Используем ваш мощный токен
+          ref: main # Явно указываем ветку, чтобы не быть в detached HEAD
 
       - uses: pnpm/action-setup@v3
         with:
@@ -32,22 +33,22 @@ jobs:
       # Генерация кода реестра (важно перед билдом)
       - run: pnpm -r build
 
-      # Настройка Git для коммита версии
-      - name: Configure Git
+      # 2. Bump version
+      - name: Bump Registry Version
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      # Повышаем версию registry (всегда патч при любом пуше в мастер)
-      - name: Bump Registry Version
-        run: |
           cd packages/registry
           npm version patch -m "chore(release): bump registry version to %s [skip ci]"
-          cd ../..
 
-      # Публикуем (publish из корня опубликует обновленный пакет)
+          # Возвращаемся в корень и проверяем статус
+          cd ../..
+          git status
+
+      # 3. Publish
       - run: pnpm -r publish --no-git-checks
 
-      # Пушим изменения версии обратно в репо (чтобы package.json обновился в гите)
+      # 4. Push (самое важное)
       - name: Push changes
-        run: git push
+        run: git push origin main
