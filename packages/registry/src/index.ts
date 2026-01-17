@@ -9,7 +9,8 @@ export const ServiceNames = {
   Rererer: 'rererer-service',
   Sales: 'sales-service',
   Test: 'test-service',
-  Tttt: 'tttt-service'
+  Tttt: 'tttt-service',
+  Weeeeeee: 'weeeeeee-service'
 } as const;
 
 export type ServiceName = typeof ServiceNames[keyof typeof ServiceNames];
@@ -49,6 +50,12 @@ export const Registry = {
     name: ServiceNames.Tttt,
     port: 3000,
     url: 'http://tttt-service.coolcinema.svc.cluster.local:3000',
+    description: ''
+  },
+  Weeeeeee: {
+    name: ServiceNames.Weeeeeee,
+    port: 3000,
+    url: 'http://weeeeeee-service.coolcinema.svc.cluster.local:3000',
     description: ''
   }
 } as const;
