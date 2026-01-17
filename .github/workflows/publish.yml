@@ -58,7 +58,7 @@ jobs:
 
       - name: Push changes back to repo
         # Для пуша используем PAT, чтобы иметь права записи в защищенную ветку (если нужно)
-        # Если ветка не защищена, можно попробовать и GITHUB_TOKEN
+
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.COOLCINEMA_GH_PKG_TOKEN }}@github.com/${{ github.repository }}
           git push origin main
