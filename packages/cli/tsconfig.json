@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    // Для работы с import в Node.js (или используйте .mjs)
+    "module": "CommonJS",
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"]
+}
