@@ -5,6 +5,7 @@
 
 export const ServiceNames = {
   Identity: 'identity-service',
+  Ololo: 'ololo-service',
   Sales: 'sales-service',
   Test: 'test-service',
   Tttt: 'tttt-service'
@@ -18,6 +19,12 @@ export const Registry = {
     port: 3000,
     url: 'http://identity-service.coolcinema.svc.cluster.local:3000',
     description: 'User authentication and profile management'
+  },
+  Ololo: {
+    name: ServiceNames.Ololo,
+    port: 3000,
+    url: 'http://ololo-service.coolcinema.svc.cluster.local:3000',
+    description: ''
   },
   Sales: {
     name: ServiceNames.Sales,
