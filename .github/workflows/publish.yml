@@ -6,6 +6,7 @@ on:
 
 jobs:
   publish:
+    # Предотвращаем бесконечный цикл, если коммит сделал сам бот
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     permissions:
@@ -15,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Если ветка main защищена, используйте здесь PAT: ${{ secrets.COOLCINEMA_GH_PKG_TOKEN }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v3
