@@ -3,11 +3,6 @@ name: Publish Packages
 on:
   push:
     branches: [main]
-    paths:
-      - "packages/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/**" # Добавляем, чтобы workflow запускался при своих изменениях
 
 jobs:
   publish:
@@ -20,7 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v3
@@ -36,6 +30,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate code and update version
         working-directory: packages/registry
@@ -50,6 +46,7 @@ jobs:
         run: pnpm -r publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
