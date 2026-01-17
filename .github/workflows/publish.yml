@@ -3,21 +3,22 @@ name: Publish Packages
 on:
   push:
     branches: [main]
+    paths:
+      - "packages/registry/definitions/**"
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # <--- ВАЖНО: разрешить запись в репо
+      contents: write
       packages: write
     env:
-      COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.COOLCINEMA_GH_PKG_TOKEN }}
+      COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      # 1. Checkout (обязательно с токеном и ref!)
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.COOLCINEMA_GH_PKG_TOKEN }} # Используем ваш мощный токен
-          ref: main # Явно указываем ветку, чтобы не быть в detached HEAD
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
       - uses: pnpm/action-setup@v3
         with:
@@ -35,26 +36,29 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-          # 1. Генерируем актуальный код
           cd packages/registry
+
+          # 1. Генерируем актуальный код (src/index.ts обновится)
           npm run generate
 
-          # 2. Бампаем версию (это создаст коммит только с package.json, поэтому делаем хитрее)
-          npm version patch --no-git-tag-version # Меняем только файл
+          # 2. Бампаем версию без создания тега (меняем только package.json)
+          npm version patch --no-git-tag-version
 
-          # 3. Добавляем ВСЕ изменения (код + версия)
+          # 3. Коммитим изменения (код + версия)
           git add .
-          git commit -m "chore(release): update registry code and version [skip ci]"
+          git commit -m "chore(release): update registry code and version [skip ci]" || echo "No changes to commit"
 
           cd ../..
 
       - name: Build & Publish
+        # Теперь build будет использовать уже обновленный src/index.ts
         run: |
           pnpm -r build
           pnpm -r publish --no-git-checks
 
       - name: Push changes back to repo
-        # Используем PAT для пуша, чтобы обойти ограничения
+        # Для пуша используем PAT, чтобы иметь права записи в защищенную ветку (если нужно)
+        # Если ветка не защищена, можно попробовать и GITHUB_TOKEN
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.COOLCINEMA_GH_PKG_TOKEN }}@github.com/${{ github.repository }}
           git push origin main
