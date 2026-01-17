@@ -30,25 +30,31 @@ jobs:
 
       - run: pnpm install
 
-      # Генерация кода реестра (важно перед билдом)
-      - run: pnpm -r build
-
-      # 2. Bump version
-      - name: Bump Registry Version
+      - name: Generate Code & Bump Version
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
+          # 1. Генерируем актуальный код
           cd packages/registry
-          npm version patch -m "chore(release): bump registry version to %s [skip ci]"
+          npm run generate
 
-          # Возвращаемся в корень и проверяем статус
+          # 2. Бампаем версию (это создаст коммит только с package.json, поэтому делаем хитрее)
+          npm version patch --no-git-tag-version # Меняем только файл
+
+          # 3. Добавляем ВСЕ изменения (код + версия)
+          git add .
+          git commit -m "chore(release): update registry code and version [skip ci]"
+
           cd ../..
-          git status
 
-      # 3. Publish
-      - run: pnpm -r publish --no-git-checks
+      - name: Build & Publish
+        run: |
+          pnpm -r build
+          pnpm -r publish --no-git-checks
 
-      # 4. Push (самое важное)
-      - name: Push changes
-        run: git push origin main
+      - name: Push changes back to repo
+        # Используем PAT для пуша, чтобы обойти ограничения
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.COOLCINEMA_GH_PKG_TOKEN }}@github.com/${{ github.repository }}
+          git push origin main
