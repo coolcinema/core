@@ -7,6 +7,9 @@
     "build": "tsc",
     "start": "tsx src/index.ts"
   },
+  "bin": {
+    "coolcinema": "./dist/index.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
