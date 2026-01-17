@@ -8,13 +8,15 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # <--- ВАЖНО: разрешить запись в репо
       packages: write
-    # Переменная нужна на всех шагах (install, build, publish)
     env:
       COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Используем токен для пуша
+
       - uses: pnpm/action-setup@v3
         with:
           version: 9
@@ -25,7 +27,30 @@ jobs:
           scope: "@coolcinema"
 
       - run: pnpm install
+
+      # Генерация кода реестра (важно перед билдом)
       - run: pnpm -r build
 
-      # Публикуем.
+      # Настройка Git для коммита версии
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      # Повышаем версию registry (всегда патч при любом пуше в мастер)
+      - name: Bump Registry Version
+        run: |
+          cd packages/registry
+          npm version patch -m "chore(release): bump registry version to %s [skip ci]"
+          # Возвращаемся в корень
+          cd ../..
+
+      # Публикуем (publish из корня опубликует обновленный пакет)
       - run: pnpm -r publish --no-git-checks
+
+      # Пушим изменения версии обратно в репо (чтобы package.json обновился в гите)
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
