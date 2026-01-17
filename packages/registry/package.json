@@ -7,9 +7,12 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "build": "tsc"
+    "generate": "tsx scripts/build.ts",
+    "build": "npm run generate && tsc"
   },
   "devDependencies": {
+    "ts-node": "^10.9.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.0.0"
   }
 }
