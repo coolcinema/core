@@ -43,7 +43,9 @@ export const Registry = {
 ${Object.keys(services)
   .map((key) => {
     // Генерируем URL прямо здесь, при сборке
-    const url = `http://${services[key].slug}.coolcinema.svc.cluster.local:${services[key].port}`;
+    // const url = `http://${services[key].slug}.coolcinema.svc.cluster.local:${services[key].port}`;
+    const url = `${services[key].slug}.coolcinema.svc.cluster.local:${services[key].port}`;
+
     return `  ${key}: {
     name: ServiceNames.${key},
     port: ${services[key].port},
