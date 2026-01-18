@@ -21,7 +21,7 @@ export const Registry = {
     name: ServiceNames.Sales,
     port: 5000,
     url: 'http://sales-service.coolcinema.svc.cluster.local:5000',
-    description: ''
+    description: 'Sales service '
   }
 } as const;
 
