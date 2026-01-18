@@ -2,5 +2,6 @@
   "name": "Sales",
   "slug": "sales-service",
   "port": 5000,
-  "description": ""
+  "description": "Sales service "
 }
+
