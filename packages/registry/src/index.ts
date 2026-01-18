@@ -14,13 +14,13 @@ export const Registry = {
   Identity: {
     name: ServiceNames.Identity,
     port: 5000,
-    url: 'http://identity-service.coolcinema.svc.cluster.local:5000',
+    url: 'identity-service.coolcinema.svc.cluster.local:5000',
     description: 'User authentication and profile management'
   },
   Sales: {
     name: ServiceNames.Sales,
     port: 5000,
-    url: 'http://sales-service.coolcinema.svc.cluster.local:5000',
+    url: 'sales-service.coolcinema.svc.cluster.local:5000',
     description: 'Sales service '
   }
 } as const;
