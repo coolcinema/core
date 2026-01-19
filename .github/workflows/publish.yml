@@ -4,9 +4,14 @@ on:
   push:
     branches: [main]
 
+# Предотвращает параллельные запуски
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
-    # Предотвращаем бесконечный цикл, если коммит сделал сам бот
+    # Игнорируем коммиты, сделанные самим ботом
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     permissions:
@@ -16,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Если ветка main защищена, используйте здесь PAT: ${{ secrets.COOLCINEMA_GH_PKG_TOKEN }}
+          # Используем GITHUB_TOKEN для доступа к коду
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v3
@@ -35,11 +40,24 @@ jobs:
         env:
           COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate code and update version
-        working-directory: packages/registry
+      - name: Bump Versions & Generate Code
         run: |
-          pnpm generate
-          pnpm version patch --no-git-tag-version
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+          # 1. Специфика Registry (если есть)
+          if [ -d "packages/registry" ]; then
+            cd packages/registry
+            pnpm generate
+            cd ../..
+          fi
+
+          # 2. Бамп версий ВО ВСЕХ пакетах
+          pnpm -r exec npm version patch --no-git-tag-version
+
+          # 3. Коммит изменений
+          git add .
+          git commit -m "chore(release): bump versions [skip ci]" || echo "No changes to commit"
 
       - name: Build packages
         run: pnpm -r build
@@ -53,7 +71,7 @@ jobs:
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(release): update registry code and version [skip ci]"
+          commit_message: "chore(release): update versions [skip ci]"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
-          file_pattern: "packages/registry/*"
+          file_pattern: "packages/**/package.json packages/**/src/index.ts"
