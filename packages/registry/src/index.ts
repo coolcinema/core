@@ -4,6 +4,7 @@
  */
 
 export const ServiceNames = {
+  Cheatsheet: 'cheatsheet-service',
   Identity: 'identity-service',
   Sales: 'sales-service'
 } as const;
@@ -11,6 +12,12 @@ export const ServiceNames = {
 export type ServiceName = typeof ServiceNames[keyof typeof ServiceNames];
 
 export const Registry = {
+  Cheatsheet: {
+    name: ServiceNames.Cheatsheet,
+    port: 5000,
+    url: 'cheatsheet-service.coolcinema.svc.cluster.local:5000',
+    description: ''
+  },
   Identity: {
     name: ServiceNames.Identity,
     port: 5000,
