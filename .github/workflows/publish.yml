@@ -42,9 +42,6 @@ jobs:
 
       - name: Bump Versions & Generate Code
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
           # 1. Специфика Registry (если есть)
           if [ -d "packages/registry" ]; then
             cd packages/registry
@@ -52,12 +49,8 @@ jobs:
             cd ../..
           fi
 
-          # 2. Бамп версий ВО ВСЕХ пакетах
-          pnpm -r exec npm version patch --no-git-tag-version
-
-          # 3. Коммит изменений
-          git add .
-          git commit -m "chore(release): bump versions [skip ci]" || echo "No changes to commit"
+          # 2. Бамп версий ВО ВСЕХ пакетах (меняем файлы на диске)
+          pnpm -r exec npm version patch --no-git-tag-version --force
 
       - name: Build packages
         run: pnpm -r build
