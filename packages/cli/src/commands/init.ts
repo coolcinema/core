@@ -37,7 +37,10 @@ export const initCommand = async () => {
       type: "input",
       name: "slug",
       message: "Service Slug (kebab-case):",
-      default: (ans: any) => `${ans.name.toLowerCase()}-service`,
+      default: (ans: any) => {
+        const kebab = toKebabCase(ans.name);
+        return kebab.endsWith("-service") ? kebab : `${kebab}-service`;
+      },
     },
     {
       type: "number",
@@ -72,15 +75,18 @@ export const initCommand = async () => {
 
   fs.writeFileSync(manifestPath, yaml.dump(manifest));
   console.log(
-    chalk.green(`
-✅ Generated coolcinema.yaml for ${answers.name}`),
+    chalk.green(`\n✅ Generated coolcinema.yaml for ${answers.name}`),
   );
 };
 
-// Helper
+// Helpers
 function toPascalCase(str: string) {
   return str
     .replace(/(?:^\w|[A-Z]|\b\w)/g, (word) => word.toUpperCase())
     .replace(/\s+/g, "")
     .replace(/-/g, "");
+}
+
+function toKebabCase(str: string) {
+  return str.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 }
