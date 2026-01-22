@@ -6,6 +6,7 @@
 export const ServiceNames = {
   Cheatsheet: 'cheatsheet-service',
   Identity: 'identity-service',
+  IdentityService: 'identity-service',
   Sales: 'sales-service'
 } as const;
 
@@ -23,6 +24,12 @@ export const Registry = {
     port: 5000,
     url: 'identity-service.coolcinema.svc.cluster.local:5000',
     description: 'User authentication and profile management'
+  },
+  IdentityService: {
+    name: ServiceNames.IdentityService,
+    port: 5000,
+    url: 'identity-service.coolcinema.svc.cluster.local:5000',
+    description: ''
   },
   Sales: {
     name: ServiceNames.Sales,
