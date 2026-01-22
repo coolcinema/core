@@ -42,15 +42,32 @@ jobs:
 
       - name: Bump Versions & Generate Code
         run: |
-          # 1. Специфика Registry (если есть)
+          # 1. Registry Generation
           if [ -d "packages/registry" ]; then
             cd packages/registry
             pnpm generate
             cd ../..
           fi
 
-          # 2. Бамп версий ВО ВСЕХ пакетах (меняем файлы на диске)
+          # 2. Contracts Generation (NEW)
+          if [ -d "packages/contracts" ]; then
+            cd packages/contracts
+            pnpm install # Need dependencies for protoc plugin
+            pnpm generate
+            cd ../..
+          fi
+
+          # 3. Version Bump
           pnpm -r exec npm version patch --no-git-tag-version --force
+          # # 1. Специфика Registry (если есть)
+          # if [ -d "packages/registry" ]; then
+          #   cd packages/registry
+          #   pnpm generate
+          #   cd ../..
+          # fi
+          #
+          # # 2. Бамп версий ВО ВСЕХ пакетах (меняем файлы на диске)
+          # pnpm -r exec npm version patch --no-git-tag-version --force
 
       - name: Build packages
         run: pnpm -r build
