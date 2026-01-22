@@ -1,6 +1,0 @@
-{
-  "name": "Identity",
-  "slug": "identity-service",
-  "port": 5000,
-  "description": "User authentication and profile management"
-}
