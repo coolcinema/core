@@ -52,7 +52,9 @@ export const pushCommand = async () => {
   };
 
   const registryContent = JSON.stringify(registryData, null, 2);
-  const registryPath = `packages/registry/definitions/${service.name.toLowerCase()}.json`;
+
+  // Используем поле repository для имени файла
+  const registryPath = `packages/registry/definitions/${service.repository}.json`;
 
   try {
     // 5. Check if file exists to get SHA (needed for update)
@@ -82,17 +84,15 @@ export const pushCommand = async () => {
       sha: sha, // Undefined if creating new file
     });
 
-    console.log(
-      chalk.green(`
-✅ Successfully pushed to Registry!`),
-    );
+    console.log(chalk.green(`\n✅ Successfully pushed to Registry!`));
     console.log(chalk.dim(`Path: ${OWNER}/${REPO}/${registryPath}`));
     console.log(
-      chalk.yellow(`
-⏳ CI/CD in 'core' repo will now rebuild @coolcinema/registry package.`),
+      chalk.yellow(
+        `\n⏳ CI/CD in 'core' repo will now rebuild @coolcinema/registry package.`,
+      ),
     );
   } catch (error: any) {
-    console.error(chalk.red("❌ Failed to push to GitHub:"));
+    console.error(chalk.red("\n❌ Failed to push to GitHub:"));
     console.error(error.response?.data?.message || error.message);
     process.exit(1);
   }

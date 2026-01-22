@@ -3,6 +3,7 @@ export interface ServiceManifest {
   service: {
     name: string;
     slug: string;
+    repository: string;
     description: string;
     port: number;
     language: string;

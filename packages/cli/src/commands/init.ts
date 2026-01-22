@@ -43,6 +43,12 @@ export const initCommand = async () => {
       },
     },
     {
+      type: "input",
+      name: "repository",
+      message: "Repository Name (for registry file):",
+      default: (ans: any) => ans.slug, // По умолчанию совпадает со слагом
+    },
+    {
       type: "number",
       name: "port",
       message: "Service Port:",
@@ -67,6 +73,7 @@ export const initCommand = async () => {
     service: {
       name: answers.name,
       slug: answers.slug,
+      repository: answers.repository,
       description: answers.description,
       port: answers.port,
       language: answers.language,
