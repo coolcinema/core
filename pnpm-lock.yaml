@@ -55,19 +55,19 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/contracts:
+  packages/contarcts:
     devDependencies:
+      '@bufbuild/buf':
+        specifier: ^1.48.0
+        version: 1.64.0
       '@grpc/grpc-js':
-        specifier: ^1.14.3
+        specifier: ^1.10.0
         version: 1.14.3
-      '@types/node':
-        specifier: ^25.0.9
-        version: 25.0.9
       ts-proto:
-        specifier: ^2.6.1
-        version: 2.11.0
+        specifier: ^1.170.0
+        version: 1.181.2
       typescript:
-        specifier: ^5.9.3
+        specifier: ^5.0.0
         version: 5.9.3
 
   packages/foundation:
@@ -124,8 +124,52 @@ importers:
 
 packages:
 
-  '@bufbuild/protobuf@2.11.0':
-    resolution: {integrity: sha512-sBXGT13cpmPR5BMgHE6UEEfEaShh5Ror6rfN3yEK5si7QVrtZg8LEPQb0VVhiLRUslD2yLnXtnRzG035J/mZXQ==}
+  '@bufbuild/buf-darwin-arm64@1.64.0':
+    resolution: {integrity: sha512-wv4WJ/ho9Jt4b/3SuwrzCa7r68yvOSMhnpztPivu75CMF+btZijWYjc/Wt6JkOYbGmsXAlSzyANXZaQM9KCm8g==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@bufbuild/buf-darwin-x64@1.64.0':
+    resolution: {integrity: sha512-2idJ/x94DzsYbiuLticvevXNiTXeCv/WjO7NYcwo8WXOIBHdGKK6nfoEAa4DMSo2qv/u3O2Q9sublQ+LYmITkw==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@bufbuild/buf-linux-aarch64@1.64.0':
+    resolution: {integrity: sha512-954Tg1LKjPHNOuOBJH57SDnvHYBFf3NSWccu8bqBcXcRpdebnRiNCDWPGDhXqXXPfLnAbTYMyOdh+D4KsYsygw==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@bufbuild/buf-linux-armv7@1.64.0':
+    resolution: {integrity: sha512-RDPQK+qMXuA2TV8jvzrGUFR1m+cJ32crxPHXgqmHSd+/LneUdNB/U0euhm94rNP8Xr3EbcMTBQ0kwajF4ZeeKg==}
+    engines: {node: '>=12'}
+    cpu: [arm]
+    os: [linux]
+
+  '@bufbuild/buf-linux-x64@1.64.0':
+    resolution: {integrity: sha512-PONSa1DorjkMASu9EYtd6ckgMQC5MSHi9aY5CqWwV5hl262A43k2qt3EbYCClyGdNjC+Vu8Av9Blfd91Yg5kRw==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [linux]
+
+  '@bufbuild/buf-win32-arm64@1.64.0':
+    resolution: {integrity: sha512-nBEr7udVctBq0TIoCWkoI1BCcwDynKW9u1bX27/0QUnIySm9bgS5AeMyhuWsXKka+kHjR/fMf3tHlP2a5o85ag==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@bufbuild/buf-win32-x64@1.64.0':
+    resolution: {integrity: sha512-5dwpWxLRCLKQ3xsrmRs8lGO2lL6mVCKRlgvGDj5PCMy9+BmqmwHtPAYMj+nUtqQqUNnax4oADeIfliMmeUXd7g==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [win32]
+
+  '@bufbuild/buf@1.64.0':
+    resolution: {integrity: sha512-MC9Zj+pUQsKLEQrsBPmV3CuECYUSD2n82WUcLMu6f49LwSMtKg887B5vPADsf2yMM+6N1LjYHHLb3fN4R1ZGyg==}
+    engines: {node: '>=12'}
+    hasBin: true
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1371,11 +1415,11 @@ packages:
   ts-poet@6.12.0:
     resolution: {integrity: sha512-xo+iRNMWqyvXpFTaOAvLPA5QAWO6TZrSUs5s4Odaya3epqofBu/fMLHEWl8jPmjhA0s9sgj9sNvF1BmaQlmQkA==}
 
-  ts-proto-descriptors@2.1.0:
-    resolution: {integrity: sha512-S5EZYEQ6L9KLFfjSRpZWDIXDV/W7tAj8uW7pLsihIxyr62EAVSiKuVPwE8iWnr849Bqa53enex1jhDUcpgquzA==}
+  ts-proto-descriptors@1.16.0:
+    resolution: {integrity: sha512-3yKuzMLpltdpcyQji1PJZRfoo4OJjNieKTYkQY8pF7xGKsYz/RHe3aEe4KiRxcinoBmnEhmuI+yJTxLb922ULA==}
 
-  ts-proto@2.11.0:
-    resolution: {integrity: sha512-Emqt0T/Wf74aT+IAoOqEkWWhxVOVF6QwVW4CBIyL3RRQORJpaQDVHy/Ykg9psQH/Zo6XMpT9KBRjpkVSZ0vXkQ==}
+  ts-proto@1.181.2:
+    resolution: {integrity: sha512-knJ8dtjn2Pd0c5ZGZG8z9DMiD4PUY8iGI9T9tb8DvGdWRMkLpf0WcPO7G+7cmbZyxvNTAG6ci3fybEaFgMZIvg==}
     hasBin: true
 
   tslib@2.8.1:
@@ -1448,7 +1492,36 @@ packages:
 
 snapshots:
 
-  '@bufbuild/protobuf@2.11.0': {}
+  '@bufbuild/buf-darwin-arm64@1.64.0':
+    optional: true
+
+  '@bufbuild/buf-darwin-x64@1.64.0':
+    optional: true
+
+  '@bufbuild/buf-linux-aarch64@1.64.0':
+    optional: true
+
+  '@bufbuild/buf-linux-armv7@1.64.0':
+    optional: true
+
+  '@bufbuild/buf-linux-x64@1.64.0':
+    optional: true
+
+  '@bufbuild/buf-win32-arm64@1.64.0':
+    optional: true
+
+  '@bufbuild/buf-win32-x64@1.64.0':
+    optional: true
+
+  '@bufbuild/buf@1.64.0':
+    optionalDependencies:
+      '@bufbuild/buf-darwin-arm64': 1.64.0
+      '@bufbuild/buf-darwin-x64': 1.64.0
+      '@bufbuild/buf-linux-aarch64': 1.64.0
+      '@bufbuild/buf-linux-armv7': 1.64.0
+      '@bufbuild/buf-linux-x64': 1.64.0
+      '@bufbuild/buf-win32-arm64': 1.64.0
+      '@bufbuild/buf-win32-x64': 1.64.0
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -2836,16 +2909,17 @@ snapshots:
     dependencies:
       dprint-node: 1.0.8
 
-  ts-proto-descriptors@2.1.0:
+  ts-proto-descriptors@1.16.0:
     dependencies:
-      '@bufbuild/protobuf': 2.11.0
+      long: 5.3.2
+      protobufjs: 7.5.4
 
-  ts-proto@2.11.0:
+  ts-proto@1.181.2:
     dependencies:
-      '@bufbuild/protobuf': 2.11.0
       case-anything: 2.1.13
+      protobufjs: 7.5.4
       ts-poet: 6.12.0
-      ts-proto-descriptors: 2.1.0
+      ts-proto-descriptors: 1.16.0
 
   tslib@2.8.1: {}
 

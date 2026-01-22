@@ -1,0 +1,17 @@
+{
+  "name": "@coolcinema/contracts",
+  "version": "1.0.0",
+  "scripts": {
+    "generate": "buf generate protos",
+    "build": "pnpm run generate && tsc"
+  },
+  "peerDependencies": {
+    "@grpc/grpc-js": "^1.10.0"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.48.0",
+    "ts-proto": "^1.170.0",
+    "typescript": "^5.0.0",
+    "@grpc/grpc-js": "^1.10.0"
+  }
+}
