@@ -1,59 +1,49 @@
-import inquirer from "inquirer";
 import * as fs from "fs";
 import * as path from "path";
+import inquirer from "inquirer";
 import * as yaml from "js-yaml";
+import chalk from "chalk";
 import { ServiceManifest } from "../types";
 
 export const initCommand = async () => {
-  console.log("🎬 Initializing CoolCinema Service Manifest...\n");
+  const manifestPath = path.join(process.cwd(), "coolcinema.yaml");
 
-  const cwd = process.cwd();
-  const folderName = path.basename(cwd);
+  if (fs.existsSync(manifestPath)) {
+    console.log(chalk.yellow("⚠️  coolcinema.yaml already exists."));
+    const { overwrite } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "overwrite",
+        message: "Do you want to overwrite it?",
+        default: false,
+      },
+    ]);
+    if (!overwrite) return;
+  }
 
-  // Ищем proto файлы, чтобы предложить выбор
-  const findProtoFiles = (dir: string, fileList: string[] = []) => {
-    const files = fs.readdirSync(dir);
-    files.forEach((file) => {
-      const filePath = path.join(dir, file);
-      const stat = fs.statSync(filePath);
-      if (
-        stat.isDirectory() &&
-        file !== "node_modules" &&
-        file !== ".git" &&
-        file !== "dist"
-      ) {
-        findProtoFiles(filePath, fileList);
-      } else if (file.endsWith(".proto")) {
-        fileList.push(path.relative(cwd, filePath));
-      }
-    });
-    return fileList;
-  };
-
-  const protoFiles = findProtoFiles(cwd);
+  const currentDirName = path.basename(process.cwd());
 
   const answers = await inquirer.prompt([
     {
       type: "input",
       name: "name",
       message: "Service Name (PascalCase):",
-      default:
-        folderName.charAt(0).toUpperCase() +
-        folderName.slice(1).replace(/-service$/, ""),
+      default: toPascalCase(currentDirName), // Helper needed or simple logic
       validate: (input) =>
-        /^[A-Z][a-zA-Z0-9]+$/.test(input) || "Must be PascalCase",
+        /^[A-Z][a-zA-Z0-9]+$/.test(input) ||
+        "Must be PascalCase (e.g. Identity)",
     },
     {
       type: "input",
       name: "slug",
-      message: "K8s Service Name (kebab-case):",
-      default: (ans) => `${ans.name.toLowerCase()}-service`,
+      message: "Service Slug (kebab-case):",
+      default: (ans: any) => `${ans.name.toLowerCase()}-service`,
     },
     {
       type: "number",
       name: "port",
       message: "Service Port:",
-      default: 3000,
+      default: 5000,
     },
     {
       type: "input",
@@ -62,32 +52,35 @@ export const initCommand = async () => {
     },
     {
       type: "list",
-      name: "protoPath",
-      message: "Select main .proto file (optional):",
-      choices: [...protoFiles, "None"],
-      when: protoFiles.length > 0,
+      name: "language",
+      message: "Language:",
+      choices: ["typescript", "go", "python"],
+      default: "typescript",
     },
   ]);
 
   const manifest: ServiceManifest = {
+    version: "1.0.0",
     service: {
       name: answers.name,
       slug: answers.slug,
       description: answers.description,
       port: answers.port,
-      language: "typescript",
+      language: answers.language,
     },
   };
 
-  if (answers.protoPath && answers.protoPath !== "None") {
-    manifest.contracts = {
-      proto: answers.protoPath,
-    };
-  }
-
-  const yamlStr = yaml.dump(manifest);
-  fs.writeFileSync(path.join(cwd, "coolcinema.yaml"), yamlStr);
-
-  console.log("\n✅ coolcinema.yaml created successfully!");
-  console.log('👉 Now run "coolcinema service push" to sync with Core.');
+  fs.writeFileSync(manifestPath, yaml.dump(manifest));
+  console.log(
+    chalk.green(`
+✅ Generated coolcinema.yaml for ${answers.name}`),
+  );
 };
+
+// Helper
+function toPascalCase(str: string) {
+  return str
+    .replace(/(?:^\w|[A-Z]|\b\w)/g, (word) => word.toUpperCase())
+    .replace(/\s+/g, "")
+    .replace(/-/g, "");
+}

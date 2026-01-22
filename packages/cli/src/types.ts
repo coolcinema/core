@@ -1,4 +1,5 @@
 export interface ServiceManifest {
+  version: string;
   service: {
     name: string;
     slug: string;
