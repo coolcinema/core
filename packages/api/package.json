@@ -8,13 +8,14 @@
   },
   "dependencies": {
     "@coolcinema/catalog": "workspace:*",
-    "@coolcinema/foundation": "workspace:*"
+    "@coolcinema/foundation": "workspace:*",
+    "nice-grpc": "^2.1.14"
   },
   "devDependencies": {
     "@coolcinema/platform": "workspace:*",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0",
     "glob": "^10.0.0",
-    "ts-morph": "^21.0.0"
+    "ts-morph": "^21.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
   }
 }

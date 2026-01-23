@@ -1,66 +1,40 @@
 import {
-  Server,
+  createServer,
+  createClientFactory,
+  createChannel,
   ChannelCredentials,
-  ServerCredentials,
-  credentials,
-  ServiceDefinition,
-  UntypedServiceImplementation,
-} from "@grpc/grpc-js";
-import { contextClientInterceptor } from "./client-interceptor";
-import { wrapGrpcService } from "./server-utils";
+} from "nice-grpc";
+import { CompatServiceDefinition } from "nice-grpc/lib/service-definitions";
+import { contextClientMiddleware } from "./client-interceptor";
+import { contextServerMiddleware } from "./server-utils";
 
 // --- Client Factory ---
 
-// Тип конструктора клиента
-type ClientConstructor<T> = new (
+export function createGrpcClient<Client>(
+  definition: CompatServiceDefinition,
   address: string,
-  creds: ChannelCredentials,
-  options?: any,
-) => T;
+): Client {
+  // 1. Создаем канал
+  const channel = createChannel(address, ChannelCredentials.createInsecure());
 
-export function createGrpcClient<T>(
-  ClientClass: ClientConstructor<T>,
-  address: string,
-): T {
-  return new ClientClass(address, credentials.createInsecure(), {
-    interceptors: [contextClientInterceptor],
-  });
+  // 2. Создаем фабрику с мидлварями
+  const clientFactory = createClientFactory().use(contextClientMiddleware);
+
+  // 3. Создаем клиент
+  return clientFactory.create(definition, channel) as Client;
 }
 
 // --- Server Factory ---
 
 export class PlatformGrpcServer {
-  private server: Server;
+  private server = createServer().use(contextServerMiddleware); // Подключаем глобальный мидлварь
 
-  constructor() {
-    this.server = new Server();
+  async listen(port: number) {
+    return this.server.listen(`0.0.0.0:${port}`);
   }
 
-  addService<T extends object>(
-    definition: ServiceDefinition<any>,
-    implementation: T,
-  ) {
-    // Приводим к UntypedServiceImplementation, так как мы знаем, что обертка возвращает совместимый объект
-    this.server.addService(
-      definition,
-      wrapGrpcService(
-        implementation,
-      ) as unknown as UntypedServiceImplementation,
-    );
-  }
-
-  async listen(port: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Используем ServerCredentials для сервера!
-      this.server.bindAsync(
-        `0.0.0.0:${port}`,
-        ServerCredentials.createInsecure(),
-        (err, port) => {
-          if (err) return reject(err);
-          console.log(`📡 gRPC Server listening on port ${port}`);
-          resolve();
-        },
-      );
-    });
+  addService<T>(definition: CompatServiceDefinition, implementation: T) {
+    // В nice-grpc не нужно оборачивать implementation вручную
+    this.server.add(definition, implementation as any);
   }
 }

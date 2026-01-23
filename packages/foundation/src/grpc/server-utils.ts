@@ -1,64 +1,40 @@
-import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
+import { ServerMiddleware, ServerMiddlewareCall, CallContext } from "nice-grpc";
 import { runInContext } from "../context/store";
 
-const IMPORTANT_HEADERS = [
-  "x-telepresence-intercept-id",
-  "x-request-id",
-  "x-trace-id",
-];
+// Middleware для сервера: извлекает заголовки и создает контекст
+export const contextServerMiddleware: ServerMiddleware = async function* <
+  Request,
+  Response,
+>(call: ServerMiddlewareCall<Request, Response>, context: CallContext) {
+  const metadata = context.metadata;
+  const routingHeaders: Record<string, string | string[]> = {};
 
-// Хелпер: gRPC metadata может быть буфером, нам нужны строки
-const metadataToString = (val: string | Buffer): string => {
-  if (Buffer.isBuffer(val)) {
-    return val.toString("utf-8");
-  }
-  return val;
-};
+  const keys = ["x-telepresence-intercept-id", "x-request-id", "x-trace-id"];
 
-// Тип для gRPC метода (используем unknown вместо any для безопасности)
-type GrpcMethod = (
-  call: ServerUnaryCall<unknown, unknown>,
-  callback: sendUnaryData<unknown>,
-) => void;
-
-// Обертка для одного метода
-const wrapMethod = (method: GrpcMethod): GrpcMethod => {
-  return (call, callback) => {
-    const metadata = call.metadata;
-    const routingHeaders: Record<string, string | string[]> = {};
-
-    // Извлекаем заголовки
-    for (const key of IMPORTANT_HEADERS) {
-      const values = metadata.get(key);
-      if (values.length > 0) {
-        // Конвертируем все значения в строки
-        const stringValues = values.map(metadataToString);
-        routingHeaders[key] =
-          stringValues.length === 1 ? stringValues[0] : stringValues;
-      }
+  for (const key of keys) {
+    const val = metadata.get(key);
+    if (val) {
+      // Приводим к строке (val может быть string или string[])
+      // Если это бинарник, он не попадет в get(key) по умолчанию без опций, но на всякий случай String()
+      routingHeaders[key] = Array.isArray(val) ? val.map(String) : String(val);
     }
+  }
 
-    const traceIdRaw = metadata.get("x-trace-id")[0];
+  const traceId = metadata.get("x-trace-id");
 
-    const ctx = {
-      traceId: traceIdRaw ? metadataToString(traceIdRaw) : undefined,
-      routingHeaders,
-    };
-
-    // Запускаем оригинальный метод внутри контекста
-    runInContext(ctx, () => method(call, callback));
+  const appCtx = {
+    traceId: typeof traceId === "string" ? traceId : undefined,
+    routingHeaders,
   };
-};
 
-// Обертка для всего объекта реализации сервиса
-export const wrapGrpcService = <T extends object>(implementation: T): T => {
-  const wrapped: any = {};
-  for (const [key, value] of Object.entries(implementation)) {
-    if (typeof value === "function") {
-      wrapped[key] = wrapMethod(value as GrpcMethod);
-    } else {
-      wrapped[key] = value;
-    }
-  }
-  return wrapped as T;
+  // Оборачиваем создание генератора в контекст
+  // runInContext выполнится синхронно и вернет AsyncGenerator, созданный внутри
+  const generator = runInContext(appCtx, () => {
+    return call.next(call.request, context);
+  });
+
+  // Делегируем выполнение этому генератору
+  // Так как генератор был создан внутри runInContext, он захватил контекст (для первого тика)
+  // Для полной поддержки async context propagation в генераторах нужны хаки, но для Unary это работает.
+  return yield* generator;
 };

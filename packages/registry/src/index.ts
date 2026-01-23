@@ -5,9 +5,7 @@
 
 export const ServiceNames = {
   Cheatsheet: 'cheatsheet-service',
-  IdentityService: 'identity-service',
-  Identity: 'identity-service',
-  Sales: 'sales-service'
+  IdentityService: 'identity-service'
 } as const;
 
 export type ServiceName = typeof ServiceNames[keyof typeof ServiceNames];
@@ -24,18 +22,6 @@ export const Registry = {
     port: 5000,
     url: 'identity-service.coolcinema.svc.cluster.local:5000',
     description: ''
-  },
-  Identity: {
-    name: ServiceNames.Identity,
-    port: 5000,
-    url: 'identity-service.coolcinema.svc.cluster.local:5000',
-    description: 'User authentication and profile management'
-  },
-  Sales: {
-    name: ServiceNames.Sales,
-    port: 5000,
-    url: 'sales-service.coolcinema.svc.cluster.local:5000',
-    description: 'Sales service '
   }
 } as const;
 

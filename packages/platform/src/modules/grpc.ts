@@ -10,30 +10,26 @@ import {
   GetAccessorDeclarationStructure,
 } from "ts-morph";
 
-// Схема: Словарь интерфейсов (auth, public -> { proto, service, port })
 const GrpcConfigSchema = z.record(
   z.object({
-    proto: z.string(), // Локальный путь: "src/proto/auth.proto"
-    service: z.string().optional(), // Имя сервиса в proto (опционально, авто-детект)
-    port: z.number().default(5000), // Порт
+    proto: z.string(),
+    service: z.string().optional(),
+    port: z.number().default(5000),
   }),
 );
 
-// Данные в реестре: Словарь (auth -> { file: "auth.proto", service: "AuthService", port: 5000 })
-// ПЛОСКАЯ СТРУКТУРА (без вложенного interfaces)
 type GrpcRegistryData = Record<
   string,
   { file: string; service: string; port: number }
 >;
 
-// Убираем явные дженерики
 export const GrpcModule: PlatformModule = {
   id: "grpc",
   schema: GrpcConfigSchema,
 
   getTemplate() {
     return {
-      _ENTYTY_: {
+      _ENTITY_: {
         proto: "path/to/your.proto",
         port: 5000,
       },
@@ -44,10 +40,8 @@ export const GrpcModule: PlatformModule = {
     const registryData: GrpcRegistryData = {};
 
     for (const [key, contract] of Object.entries(config)) {
-      // 1. Читаем файл
       const content = await ctx.readLocalFile(contract.proto);
 
-      // Авто-определение имени сервиса
       let serviceName = contract.service;
       if (!serviceName) {
         const match = content.match(/service\s+(\w+)\s*\{/);
@@ -55,18 +49,14 @@ export const GrpcModule: PlatformModule = {
           serviceName = match[1];
         } else {
           throw new Error(
-            `Could not auto-detect service name in ${contract.proto}. Please specify 'service' field in coolcinema.yaml`,
+            `Could not auto-detect service name in ${contract.proto}. Please specify 'service' field.`,
           );
         }
       }
 
-      // 2. Определяем имя файла в каталоге
       const fileName = path.basename(contract.proto);
-
-      // 3. Добавляем в список на отправку
       ctx.addFile(`proto/${fileName}`, content);
 
-      // 4. Запоминаем для реестра (ПЛОСКАЯ СТРУКТУРА)
       registryData[key] = {
         file: `proto/${fileName}`,
         service: serviceName,
@@ -78,11 +68,17 @@ export const GrpcModule: PlatformModule = {
   },
 
   async onCompile(ctx: CompileContext, registryConfig: GrpcRegistryData) {
-    // Итерируемся по значениям объекта (registryConfig и есть словарь)
     const protoFiles = Object.values(registryConfig).map((i) => i.file);
     if (protoFiles.length === 0) return [];
 
-    const cmd = `grpc_tools_node_protoc --ts_proto_out=${ctx.outDir} --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,useOptionals=messages -I ${ctx.serviceDir} ${protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" ")}`;
+    // Используем nice-grpc для генерации
+    const cmd = [
+      "grpc_tools_node_protoc",
+      `--ts_proto_out=${ctx.outDir}`,
+      "--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,esModuleInterop=true,useOptionals=messages",
+      `-I ${ctx.serviceDir}`,
+      protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" "),
+    ].join(" ");
 
     try {
       execSync(cmd, { stdio: "inherit" });
@@ -91,7 +87,6 @@ export const GrpcModule: PlatformModule = {
       throw e;
     }
 
-    // Создаем index.ts
     const exportStatements = protoFiles.map((f) => {
       const importPath = "./" + f.replace(".proto", "");
       return `export * from '${importPath}';`;
@@ -111,13 +106,11 @@ export const GrpcModule: PlatformModule = {
     registryConfig: GrpcRegistryData,
     serviceFile: SourceFile,
   ) {
-    // 1. Добавляем импорт createGrpcClient
     serviceFile.addImportDeclaration({
       moduleSpecifier: "@coolcinema/foundation",
       namedImports: ["createGrpcClient"],
     });
 
-    // 2. Добавляем импорт метаданных
     serviceFile.addImportDeclaration({
       moduleSpecifier: "@coolcinema/catalog",
       namedImports: [`${serviceName}Meta`],
@@ -125,30 +118,35 @@ export const GrpcModule: PlatformModule = {
 
     const properties: OptionalKind<GetAccessorDeclarationStructure>[] = [];
 
-    // Итерируемся по словарю
     for (const [key, iface] of Object.entries(registryConfig)) {
       const moduleName = iface.file.replace(".proto", "");
-      const clientName = `${iface.service}Client`;
-      const importAlias = `${serviceName}${key}Client`;
 
-      // 3. Импорт
+      // nice-grpc имена
+      const definitionName = `${iface.service}Definition`;
+      const clientInterface = `${iface.service}Client`;
+
+      const importAliasDef = `${serviceName}${key}Def`;
+      const importAliasClient = `${serviceName}${key}Client`;
+
       serviceFile.addImportDeclaration({
         moduleSpecifier: `@coolcinema/catalog/dist/services/${serviceSlug}/${moduleName}`,
-        namedImports: [`${clientName} as ${importAlias}`],
+        namedImports: [
+          `${definitionName} as ${importAliasDef}`,
+          `${clientInterface} as ${importAliasClient}`,
+        ],
       });
 
-      // 4. Геттер
       properties.push({
         name: key,
-        returnType: importAlias,
+        returnType: importAliasClient,
         statements: [
           `const url = \`\${${serviceName}Meta.slug}:${iface.port}\`;`,
-          `return createGrpcClient(${importAlias}, url);`,
+          // Передаем Definition в фабрику
+          `return createGrpcClient<${importAliasClient}>(${importAliasDef}, url);`,
         ],
       });
     }
 
-    // 5. Добавляем объект grpc: { ... }
     serviceFile.addVariableStatement({
       declarationKind: VariableDeclarationKind.Const,
       isExported: true,
