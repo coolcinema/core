@@ -1,0 +1,23 @@
+{
+  "name": "@coolcinema/catalog",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsx scripts/build.ts && tsc"
+  },
+  "dependencies": {
+    "long": "^5.0.0",
+    "protobufjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@coolcinema/platform": "workspace:*",
+    "@bufbuild/buf": "^1.48.0",
+    "ts-proto": "^1.170.0",
+    "grpc-tools": "^1.12.4",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "glob": "^10.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
