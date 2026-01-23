@@ -76,14 +76,12 @@ export const GrpcModule: PlatformModule<
         port: contract.port,
       };
 
-      // Собираем порты
       const existing = ports.find((p) => p.port === contract.port);
       if (!existing) {
         ports.push({ name: "grpc", port: contract.port, protocol: "TCP" });
       }
     }
 
-    // Возвращаем структуру PushResult
     return { registryData, ports };
   },
 
@@ -91,12 +89,11 @@ export const GrpcModule: PlatformModule<
     const protoFiles = Object.values(registryConfig).map((i) => i.file);
     if (protoFiles.length === 0) return [];
 
-    // Используем стандартный grpc-js (или nice-grpc если мигрировали)
-    // Здесь предполагаем базовую версию из Phase 1 (grpc-js)
+    // Используем nice-grpc + generic-definitions + no useExactTypes (fix TS errors)
     const cmd = [
       "grpc_tools_node_protoc",
       `--ts_proto_out=${ctx.outDir}`,
-      "--ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,useOptionals=messages",
+      "--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,esModuleInterop=true,useExactTypes=false,useOptionals=messages",
       `-I ${ctx.serviceDir}`,
       protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" "),
     ].join(" ");
@@ -141,20 +138,29 @@ export const GrpcModule: PlatformModule<
 
     for (const [key, iface] of Object.entries(registryConfig)) {
       const moduleName = iface.file.replace(".proto", "");
-      const clientName = `${iface.service}Client`;
-      const importAlias = `${serviceName}${key}Client`;
+
+      // nice-grpc имена
+      const definitionName = `${iface.service}Definition`;
+      const clientInterface = `${iface.service}Client`;
+
+      const importAliasDef = `${serviceName}${key}Def`;
+      const importAliasClient = `${serviceName}${key}Client`;
 
       serviceFile.addImportDeclaration({
         moduleSpecifier: `@coolcinema/catalog/dist/services/${serviceSlug}/${moduleName}`,
-        namedImports: [`${clientName} as ${importAlias}`],
+        namedImports: [
+          `${definitionName} as ${importAliasDef}`,
+          `${clientInterface} as ${importAliasClient}`,
+        ],
       });
 
       properties.push({
         name: key,
-        returnType: importAlias,
+        returnType: importAliasClient,
         statements: [
           `const url = \`\${${serviceName}Meta.slug}:${iface.port}\`;`,
-          `return createGrpcClient(${importAlias}, url);`,
+          // Передаем Definition в фабрику
+          `return createGrpcClient<${importAliasClient}>(${importAliasDef}, url);`,
         ],
       });
     }
