@@ -20,12 +20,13 @@ const GrpcConfigSchema = z.record(
 );
 
 // Данные в реестре: Словарь (auth -> { file: "auth.proto", service: "AuthService", port: 5000 })
-// ВАЖНО: Больше нет вложенности "interfaces"!
+// ПЛОСКАЯ СТРУКТУРА (без вложенного interfaces)
 type GrpcRegistryData = Record<
   string,
   { file: string; service: string; port: number }
 >;
 
+// Убираем явные дженерики
 export const GrpcModule: PlatformModule = {
   id: "grpc",
   schema: GrpcConfigSchema,
@@ -34,7 +35,7 @@ export const GrpcModule: PlatformModule = {
     return {
       YOUR_INTERFACE_NAME: {
         proto: "path/to/your.proto",
-        // service: "Auto-detected",
+        service: "YourServiceName",
         port: 5000,
       },
     };
@@ -78,6 +79,7 @@ export const GrpcModule: PlatformModule = {
   },
 
   async onCompile(ctx: CompileContext, registryConfig: GrpcRegistryData) {
+    // Итерируемся по значениям объекта (registryConfig и есть словарь)
     const protoFiles = Object.values(registryConfig).map((i) => i.file);
     if (protoFiles.length === 0) return [];
 
@@ -90,11 +92,8 @@ export const GrpcModule: PlatformModule = {
       throw e;
     }
 
+    // Создаем index.ts
     const exportStatements = protoFiles.map((f) => {
-      const baseName = path.basename(f, ".proto");
-      // Внимание: мы импортируем из корня папки сервиса, а файлы в proto/
-      // Если tsc компилирует все в одну кучу dist, то пути могут поменяться.
-      // Но в Phase 3 мы генерируем структуру services/slug/index.ts и services/slug/proto/x.ts
       const importPath = "./" + f.replace(".proto", "");
       return `export * from '${importPath}';`;
     });
@@ -127,6 +126,7 @@ export const GrpcModule: PlatformModule = {
 
     const properties: OptionalKind<GetAccessorDeclarationStructure>[] = [];
 
+    // Итерируемся по словарю
     for (const [key, iface] of Object.entries(registryConfig)) {
       const moduleName = iface.file.replace(".proto", "");
       const clientName = `${iface.service}Client`;
