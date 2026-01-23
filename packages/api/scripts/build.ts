@@ -54,23 +54,11 @@ async function build() {
     }
 
     // 3. Добавляем этот сервис в главный index.ts
-    // import * as identity from './services/identity';
-    sourceFile.addImportDeclaration({
+    // export * as IdentityService from './services/identity';
+    // Это самый чистый способ экспорта неймспейса
+    sourceFile.addExportDeclaration({
       moduleSpecifier: `./services/${name.toLowerCase()}`,
-      namespaceImport: name, // Используем имя сервиса (IdentityService)
-    });
-
-    // Экспортируем переменную с именем сервиса
-    // export const IdentityService = identity;
-    sourceFile.addVariableStatement({
-      declarationKind: VariableDeclarationKind.Const,
-      isExported: true,
-      declarations: [
-        {
-          name: name, // IdentityService
-          initializer: name, // Ссылка на импорт
-        },
-      ],
+      namespaceExport: name, // IdentityService
     });
   }
 
