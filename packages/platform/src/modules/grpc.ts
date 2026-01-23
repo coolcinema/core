@@ -24,10 +24,7 @@ interface GrpcRegistryData {
   interfaces: Record<string, { file: string; service: string; port: number }>;
 }
 
-export const GrpcModule: PlatformModule<
-  z.infer<typeof GrpcConfigSchema>,
-  GrpcRegistryData
-> = {
+export const GrpcModule: PlatformModule = {
   id: "grpc",
   schema: GrpcConfigSchema,
 
@@ -41,7 +38,7 @@ export const GrpcModule: PlatformModule<
     };
   },
 
-  async onPush(ctx: PushContext, config) {
+  async onPush(ctx: PushContext, config: z.infer<typeof GrpcConfigSchema>) {
     const interfaces: GrpcRegistryData["interfaces"] = {};
 
     for (const [key, contract] of Object.entries(config)) {
@@ -66,17 +63,13 @@ export const GrpcModule: PlatformModule<
     return { interfaces };
   },
 
-  async onCompile(ctx: CompileContext, registryConfig) {
+  async onCompile(ctx: CompileContext, registryConfig: GrpcRegistryData) {
     const protoFiles = Object.values(registryConfig.interfaces).map(
       (i) => i.file,
     );
     if (protoFiles.length === 0) return [];
 
-    const cmd = `grpc_tools_node_protoc 
-      --ts_proto_out=${ctx.outDir} 
-      --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,useOptionals=messages 
-      -I ${ctx.serviceDir} 
-      ${protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" ")}`;
+    const cmd = `grpc_tools_node_protoc --ts_proto_out=${ctx.outDir} --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,useOptionals=messages -I ${ctx.serviceDir} ${protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" ")}`;
 
     try {
       execSync(cmd, { stdio: "inherit" });
@@ -101,9 +94,9 @@ export const GrpcModule: PlatformModule<
   },
 
   generateApiCode(
-    serviceName,
-    serviceSlug,
-    registryConfig,
+    serviceName: string,
+    serviceSlug: string,
+    registryConfig: GrpcRegistryData,
     serviceFile: SourceFile,
   ) {
     // serviceFile - это файл, который будет экспортировать клиенты (src/services/identity.ts)
