@@ -33,7 +33,7 @@ export const GrpcModule: PlatformModule = {
 
   getTemplate() {
     return {
-      YOUR_INTERFACE_NAME: {
+      _ENTYTY_: {
         proto: "path/to/your.proto",
         port: 5000,
       },
