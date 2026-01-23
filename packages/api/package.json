@@ -1,0 +1,20 @@
+{
+  "name": "@coolcinema/api",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsx scripts/build.ts && tsc"
+  },
+  "dependencies": {
+    "@coolcinema/catalog": "workspace:*",
+    "@coolcinema/foundation": "workspace:*"
+  },
+  "devDependencies": {
+    "@coolcinema/platform": "workspace:*",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "glob": "^10.0.0",
+    "ts-morph": "^21.0.0"
+  }
+}
