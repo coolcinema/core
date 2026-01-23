@@ -1,0 +1,16 @@
+{
+  "name": "IdentityService",
+  "slug": "identity-service",
+  "description": "Service description placeholder",
+  "language": "typescript",
+  "interfaces": {
+    "grpc": {
+      "interfaces": {
+        "YOUR_INTERFACE_NAME": {
+          "file": "proto/identity.proto",
+          "service": "identity"
+        }
+      }
+    }
+  }
+}
