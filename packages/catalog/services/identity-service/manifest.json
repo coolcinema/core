@@ -7,9 +7,9 @@
   },
   "interfaces": {
     "grpc": {
-      "YOUR_INTERFACE_NAME": {
+      "identity": {
         "file": "proto/identity.proto",
-        "service": "identity",
+        "service": "IdentityService",
         "port": 5000
       }
     }
