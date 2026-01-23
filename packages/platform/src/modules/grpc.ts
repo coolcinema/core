@@ -35,7 +35,6 @@ export const GrpcModule: PlatformModule = {
     return {
       YOUR_INTERFACE_NAME: {
         proto: "path/to/your.proto",
-        service: "YourServiceName",
         port: 5000,
       },
     };
