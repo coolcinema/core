@@ -10,17 +10,18 @@ import {
   GetAccessorDeclarationStructure,
 } from "ts-morph";
 
-// Схема: Словарь интерфейсов (auth, public -> { proto, service })
+// Схема: Словарь интерфейсов (auth, public -> { proto, service, port })
 const GrpcConfigSchema = z.record(
   z.object({
     proto: z.string(), // Локальный путь: "src/proto/auth.proto"
     service: z.string(), // Имя сервиса в proto: "AuthService"
+    port: z.number().default(5000), // Порт
   }),
 );
 
-// Данные в реестре: Словарь (auth -> { file: "auth.proto", service: "AuthService" })
+// Данные в реестре: Словарь (auth -> { file: "auth.proto", service: "AuthService", port: 5000 })
 interface GrpcRegistryData {
-  interfaces: Record<string, { file: string; service: string }>;
+  interfaces: Record<string, { file: string; service: string; port: number }>;
 }
 
 export const GrpcModule: PlatformModule<
@@ -35,6 +36,7 @@ export const GrpcModule: PlatformModule<
       YOUR_INTERFACE_NAME: {
         proto: "path/to/your.proto",
         service: "YourServiceName",
+        port: 5000,
       },
     };
   },
@@ -53,10 +55,11 @@ export const GrpcModule: PlatformModule<
       // 3. Добавляем в список на отправку (в подпапку proto/)
       ctx.addFile(`proto/${fileName}`, content);
 
-      // 4. Запоминаем для реестра
+      // 4. Запоминаем для реестра (включая порт!)
       interfaces[key] = {
         file: `proto/${fileName}`,
         service: contract.service,
+        port: contract.port,
       };
     }
 
@@ -69,10 +72,10 @@ export const GrpcModule: PlatformModule<
     );
     if (protoFiles.length === 0) return [];
 
-    const cmd = `grpc_tools_node_protoc \
-      --ts_proto_out=${ctx.outDir} \
-      --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,useOptionals=messages \
-      -I ${ctx.serviceDir} \
+    const cmd = `grpc_tools_node_protoc 
+      --ts_proto_out=${ctx.outDir} 
+      --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,useOptionals=messages 
+      -I ${ctx.serviceDir} 
       ${protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" ")}`;
 
     try {
@@ -85,7 +88,6 @@ export const GrpcModule: PlatformModule<
     // Создаем index.ts, который экспортирует все сгенерированные файлы
     const exportStatements = protoFiles.map((f) => {
       // f = "proto/identity.proto" -> "./proto/identity"
-      // Используем replace, чтобы сохранить путь, но сменить расширение
       const importPath = "./" + f.replace(".proto", "");
       return `export * from '${importPath}';`;
     });
@@ -98,7 +100,12 @@ export const GrpcModule: PlatformModule<
     return protoFiles.map((f) => f.replace(".proto", ".ts"));
   },
 
-  generateApiCode(serviceName, registryConfig, serviceFile: SourceFile) {
+  generateApiCode(
+    serviceName,
+    serviceSlug,
+    registryConfig,
+    serviceFile: SourceFile,
+  ) {
     // serviceFile - это файл, который будет экспортировать клиенты (src/services/identity.ts)
 
     // 1. Добавляем импорт createGrpcClient
@@ -107,7 +114,7 @@ export const GrpcModule: PlatformModule<
       namedImports: ["createGrpcClient"],
     });
 
-    // 2. Добавляем импорт метаданных из Catalog (для URL)
+    // 2. Добавляем импорт метаданных из Catalog (для URL, если нужно, но мы берем из конфига)
     serviceFile.addImportDeclaration({
       moduleSpecifier: "@coolcinema/catalog",
       namedImports: [`${serviceName}Meta`],
@@ -121,8 +128,9 @@ export const GrpcModule: PlatformModule<
       const importAlias = `${serviceName}${key}Client`;
 
       // 3. Импорт сгенерированного клиента из @coolcinema/catalog
+      // Используем serviceSlug для пути
       serviceFile.addImportDeclaration({
-        moduleSpecifier: `@coolcinema/catalog/dist/services/${serviceName.toLowerCase()}/${moduleName}`,
+        moduleSpecifier: `@coolcinema/catalog/dist/services/${serviceSlug}/${moduleName}`,
         namedImports: [`${clientName} as ${importAlias}`],
       });
 
@@ -131,8 +139,9 @@ export const GrpcModule: PlatformModule<
         name: key,
         returnType: importAlias, // Явная типизация
         statements: [
-          // Формируем URL на основе метаданных
-          `const url = \`\${${serviceName}Meta.slug}:\${${serviceName}Meta.port}\`;`,
+          // Используем порт из интерфейса или метаданных
+          // Используем serviceSlug из метаданных для хоста
+          `const url = \`\${${serviceName}Meta.slug}:${iface.port}\`;`,
           `return createGrpcClient(${importAlias}, url);`,
         ],
       });
@@ -149,8 +158,6 @@ export const GrpcModule: PlatformModule<
           initializer: (writer) => {
             writer.block(() => {
               properties.forEach((p) => {
-                // Генерируем геттер вручную через writer, так как addVariableStatement
-                // не поддерживает добавление свойств-аксессоров в объект-литерал напрямую через структуры
                 writer.write(`get ${p.name}()`).block(() => {
                   if (p.statements && Array.isArray(p.statements)) {
                     p.statements.forEach((s) => writer.writeLine(String(s)));

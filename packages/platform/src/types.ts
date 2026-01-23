@@ -35,7 +35,8 @@ export interface PlatformModule<TConfig = any, TRegistry = any> {
   id: string; // Уникальный ID (например, 'grpc')
 
   // 1. Схема конфигурации для coolcinema.yaml
-  schema: z.ZodType<TConfig>;
+  // ZodType<Output, Def, Input> - разрешаем Input отличаться от TConfig (Output)
+  schema: z.ZodType<TConfig, z.ZodTypeDef, any>;
 
   // 2. Генерация шаблона для init
   // Возвращает дефолтный объект конфигурации
@@ -56,6 +57,7 @@ export interface PlatformModule<TConfig = any, TRegistry = any> {
   // serviceFile - это файл, представляющий сервис (например, src/services/identity.ts)
   generateApiCode(
     serviceName: string,
+    serviceSlug: string,
     registryConfig: TRegistry,
     serviceFile: SourceFile,
   ): void;

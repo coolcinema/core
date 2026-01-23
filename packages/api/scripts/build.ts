@@ -50,7 +50,7 @@ async function build() {
       // Модуль модифицирует AST файла serviceFile
       // Добавляет import { ... } from ...
       // Добавляет export const grpc = ...
-      module.generateApiCode(name, config, serviceFile);
+      module.generateApiCode(name, manifest.metadata.slug, config, serviceFile);
     }
 
     // 3. Добавляем этот сервис в главный index.ts
