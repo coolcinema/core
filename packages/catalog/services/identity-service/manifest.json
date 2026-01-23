@@ -10,7 +10,10 @@
   "interfaces": {
     "grpc": {
       "interfaces": {
-        "IDENTITY_SERVICE": "proto/identity.proto"
+        "IDENTITY_SERVICE": {
+          "file": "proto/identity.proto",
+          "service": "IdentityService"
+        }
       }
     }
   }
