@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package coolcinema.identity;
+package coolcinema.sales;
 
-service IdentityService {
+service SalesService {
   rpc GetPrice (GetPriceRequest) returns (GetPriceResponse);
 }
 
