@@ -150,7 +150,6 @@ export const pushCommand = async () => {
       parents: [latestCommitSha],
     });
 
-    // F. Update ref (Force push logic effectively)
     await octokit.git.updateRef({
       owner: OWNER,
       repo: REPO,
