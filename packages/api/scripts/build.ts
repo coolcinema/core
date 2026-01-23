@@ -57,33 +57,22 @@ async function build() {
     // import * as identity from './services/identity';
     sourceFile.addImportDeclaration({
       moduleSpecifier: `./services/${name.toLowerCase()}`,
-      namespaceImport: name.toLowerCase(), // "identity"
+      namespaceImport: name, // Используем имя сервиса (IdentityService)
     });
 
-    // Собираем свойства для экспорта Services = { ... }
-    serviceProperties.push({
-      name: name.toLowerCase(),
-      initializer: name.toLowerCase(), // ссылается на namespace import
+    // Экспортируем переменную с именем сервиса
+    // export const IdentityService = identity;
+    sourceFile.addVariableStatement({
+      declarationKind: VariableDeclarationKind.Const,
+      isExported: true,
+      declarations: [
+        {
+          name: name, // IdentityService
+          initializer: name, // Ссылка на импорт
+        },
+      ],
     });
   }
-
-  // 4. Экспортируем Services объект в index.ts
-  sourceFile.addVariableStatement({
-    declarationKind: VariableDeclarationKind.Const,
-    isExported: true,
-    declarations: [
-      {
-        name: "Services",
-        initializer: (writer) => {
-          writer.block(() => {
-            serviceProperties.forEach((p) => {
-              writer.write(`${p.name}: ${p.initializer},`);
-            });
-          });
-        },
-      },
-    ],
-  });
 
   // Сохраняем все файлы
   await project.save();
