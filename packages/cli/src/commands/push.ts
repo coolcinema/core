@@ -60,7 +60,8 @@ export const pushCommand = async () => {
     },
   };
 
-  const catalogData: any = { ...metadata, interfaces: {} };
+  // Сохраняем структуру: metadata + interfaces
+  const catalogData: any = { metadata, interfaces: {} };
 
   // 4. Process Modules
   for (const [moduleId, config] of Object.entries(interfaces)) {
@@ -150,6 +151,7 @@ export const pushCommand = async () => {
       parents: [latestCommitSha],
     });
 
+    // F. Update ref (Force push logic effectively)
     await octokit.git.updateRef({
       owner: OWNER,
       repo: REPO,
