@@ -146,7 +146,7 @@ export const pushCommand = async () => {
     const { data: newCommit } = await octokit.git.createCommit({
       owner: OWNER,
       repo: REPO,
-      message: `chore(catalog): update ${metadata.slug} [skip ci]`, // Можно убрать skip ci
+      message: `chore(catalog): update ${metadata.slug}`, // Можно убрать skip ci
       tree: newTree.sha,
       parents: [latestCommitSha],
     });
