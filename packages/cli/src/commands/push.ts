@@ -41,9 +41,9 @@ export const pushCommand = async () => {
     chalk.blue(`🚀 Pushing service: ${metadata.name} (${metadata.slug})...`),
   );
 
-  // 3. Реализация PushContext
-  // Этот объект передается в модули, чтобы они могли читать и отправлять файлы
-  // не зная про Octokit и файловую систему напрямую.
+  // 3. Prepare Files (In Memory)
+  const filesToUpload: Array<{ path: string; content: string }> = [];
+
   const context: PushContext = {
     serviceSlug: metadata.slug,
 
@@ -52,19 +52,17 @@ export const pushCommand = async () => {
       if (!fs.existsSync(fullPath)) {
         throw new Error(`File not found: ${localPath}`);
       }
-      return fs.readFileSync(fullPath).toString("base64"); // GitHub API требует base64 для бинарных/текстовых файлов
+      return fs.readFileSync(fullPath, "utf8"); // Читаем как utf8, не base64 (createBlob закодирует)
     },
 
     addFile(remotePath: string, content: string) {
-      // Пока просто складываем в очередь, отправим в конце
-      filesQueue.push({ path: remotePath, content });
+      filesToUpload.push({ path: remotePath, content });
     },
   };
 
-  const filesQueue: Array<{ path: string; content: string }> = [];
   const catalogData: any = { ...metadata, interfaces: {} };
 
-  // 4. Обработка модулей
+  // 4. Process Modules
   for (const [moduleId, config] of Object.entries(interfaces)) {
     const module = Platform.get(moduleId);
 
@@ -86,83 +84,89 @@ export const pushCommand = async () => {
     }
 
     // B. Запуск логики модуля
-    // Модуль читает файлы через ctx.readLocalFile и добавляет их в ctx.addFile
-    // Возвращает объект для manifest.json
     const moduleRegistryData = await module.onPush(context, parseResult.data);
-
     catalogData.interfaces[moduleId] = moduleRegistryData;
   }
 
-  // 5. Отправка файлов (Batch)
-  // Мы отправляем файлы в `packages/catalog/services/<slug>/`
+  // 5. Add Manifest
   const serviceBasePath = `packages/catalog/services/${metadata.slug}`;
-
-  // 5.1 Добавляем сам manifest.json в очередь
-  filesQueue.push({
+  filesToUpload.push({
     path: "manifest.json",
-    content: Buffer.from(JSON.stringify(catalogData, null, 2)).toString(
-      "base64",
-    ),
+    content: JSON.stringify(catalogData, null, 2),
   });
 
-  // 5.2 Заливаем все файлы
-  // В идеале это должен быть один Git Commit (через GraphQL API),
-  // но для простоты используем REST (по одному файлу).
-
-  for (const file of filesQueue) {
-    const remotePath = `${serviceBasePath}/${file.path}`;
-    const message = `chore(catalog): update ${file.path} for ${metadata.slug}`;
-
-    await createOrUpdateFile(
-      octokit,
-      OWNER,
-      REPO,
-      remotePath,
-      file.content,
-      message,
-      BRANCH,
-    );
-    console.log(chalk.green(`✅ Uploaded: ${remotePath}`));
-  }
-
-  console.log(
-    chalk.blue(`
-🏁 Service registered successfully!`),
-  );
-};
-
-// Helper для GitHub API
-async function createOrUpdateFile(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  path: string,
-  content: string,
-  message: string,
-  branch: string,
-) {
-  let sha: string | undefined;
+  // 6. ATOMIC COMMIT via Git Data API
   try {
-    const { data } = await octokit.repos.getContent({
-      owner,
-      repo,
-      path,
-      ref: branch,
+    // A. Get current ref
+    const { data: ref } = await octokit.git.getRef({
+      owner: OWNER,
+      repo: REPO,
+      ref: `heads/${BRANCH}`,
     });
-    if (!Array.isArray(data) && "sha" in data) {
-      sha = data.sha;
-    }
-  } catch (e) {
-    // File not found, create new
-  }
+    const latestCommitSha = ref.object.sha;
 
-  await octokit.repos.createOrUpdateFileContents({
-    owner,
-    repo,
-    path,
-    message,
-    content,
-    branch,
-    sha,
-  });
-}
+    // B. Get latest commit tree
+    const { data: commit } = await octokit.git.getCommit({
+      owner: OWNER,
+      repo: REPO,
+      commit_sha: latestCommitSha,
+    });
+    const baseTreeSha = commit.tree.sha;
+
+    // C. Create blobs and tree items
+    const treeItems = [];
+    for (const file of filesToUpload) {
+      const fullPath = `${serviceBasePath}/${file.path}`;
+
+      const { data: blob } = await octokit.git.createBlob({
+        owner: OWNER,
+        repo: REPO,
+        content: file.content,
+        encoding: "utf-8",
+      });
+
+      treeItems.push({
+        path: fullPath,
+        mode: "100644", // file
+        type: "blob",
+        sha: blob.sha,
+      });
+    }
+
+    // D. Create new tree
+    const { data: newTree } = await octokit.git.createTree({
+      owner: OWNER,
+      repo: REPO,
+      base_tree: baseTreeSha,
+      tree: treeItems as any,
+    });
+
+    // E. Create commit
+    const { data: newCommit } = await octokit.git.createCommit({
+      owner: OWNER,
+      repo: REPO,
+      message: `chore(catalog): update ${metadata.slug} [skip ci]`, // Можно убрать skip ci
+      tree: newTree.sha,
+      parents: [latestCommitSha],
+    });
+
+    // F. Update ref (Force push logic effectively)
+    await octokit.git.updateRef({
+      owner: OWNER,
+      repo: REPO,
+      ref: `heads/${BRANCH}`,
+      sha: newCommit.sha,
+    });
+
+    console.log(
+      chalk.green(
+        `✅ Successfully pushed ${treeItems.length} files in one commit!`,
+      ),
+    );
+    console.log(chalk.dim(`Commit: ${newCommit.sha}`));
+  } catch (e: any) {
+    console.error(chalk.red("❌ Failed to create atomic commit:"));
+    console.error(e.message);
+    process.exit(1);
+  }
+};
