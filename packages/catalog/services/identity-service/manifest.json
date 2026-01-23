@@ -10,10 +10,10 @@
       "interfaces": {
         "Identity": {
           "file": "proto/identity.proto",
-          "service": "identity",
           "port": 5000
         }
       }
     }
   }
 }
+

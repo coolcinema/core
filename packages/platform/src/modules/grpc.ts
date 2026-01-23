@@ -14,7 +14,7 @@ import {
 const GrpcConfigSchema = z.record(
   z.object({
     proto: z.string(), // Локальный путь: "src/proto/auth.proto"
-    service: z.string(), // Имя сервиса в proto: "AuthService"
+    service: z.string().optional(), // Имя сервиса в proto (опционально, авто-детект)
     port: z.number().default(5000), // Порт
   }),
 );
@@ -24,6 +24,7 @@ interface GrpcRegistryData {
   interfaces: Record<string, { file: string; service: string; port: number }>;
 }
 
+// Убираем явные дженерики, чтобы TS корректно вывел типы из Zod схемы
 export const GrpcModule: PlatformModule = {
   id: "grpc",
   schema: GrpcConfigSchema,
@@ -32,7 +33,7 @@ export const GrpcModule: PlatformModule = {
     return {
       YOUR_INTERFACE_NAME: {
         proto: "path/to/your.proto",
-        service: "YourServiceName",
+        // service: "Auto-detected",
         port: 5000,
       },
     };
@@ -45,6 +46,20 @@ export const GrpcModule: PlatformModule = {
       // 1. Читаем файл
       const content = await ctx.readLocalFile(contract.proto);
 
+      // Авто-определение имени сервиса
+      let serviceName = contract.service;
+      if (!serviceName) {
+        // Ищем строку: service ServiceName {
+        const match = content.match(/service\s+(\w+)\s*\{/);
+        if (match) {
+          serviceName = match[1];
+        } else {
+          throw new Error(
+            `Could not auto-detect service name in ${contract.proto}. Please specify 'service' field in coolcinema.yaml`,
+          );
+        }
+      }
+
       // 2. Определяем имя файла в каталоге (просто имя файла, без путей)
       // В каталоге у каждого сервиса своя папка, коллизий нет.
       const fileName = path.basename(contract.proto);
@@ -55,7 +70,7 @@ export const GrpcModule: PlatformModule = {
       // 4. Запоминаем для реестра (включая порт!)
       interfaces[key] = {
         file: `proto/${fileName}`,
-        service: contract.service,
+        service: serviceName,
         port: contract.port,
       };
     }
@@ -69,6 +84,7 @@ export const GrpcModule: PlatformModule = {
     );
     if (protoFiles.length === 0) return [];
 
+    // Используем одну строку для команды, чтобы избежать проблем с переносами
     const cmd = `grpc_tools_node_protoc --ts_proto_out=${ctx.outDir} --ts_proto_opt=outputServices=grpc-js,esModuleInterop=true,useOptionals=messages -I ${ctx.serviceDir} ${protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" ")}`;
 
     try {
@@ -133,8 +149,7 @@ export const GrpcModule: PlatformModule = {
         name: key,
         returnType: importAlias, // Явная типизация
         statements: [
-          // Используем порт из интерфейса или метаданных
-          // Используем serviceSlug из метаданных для хоста
+          // Используем порт из интерфейса
           `const url = \`\${${serviceName}Meta.slug}:${iface.port}\`;`,
           `return createGrpcClient(${importAlias}, url);`,
         ],
@@ -152,6 +167,7 @@ export const GrpcModule: PlatformModule = {
           initializer: (writer) => {
             writer.block(() => {
               properties.forEach((p) => {
+                // Генерируем геттер вручную
                 writer.write(`get ${p.name}()`).block(() => {
                   if (p.statements && Array.isArray(p.statements)) {
                     p.statements.forEach((s) => writer.writeLine(String(s)));
