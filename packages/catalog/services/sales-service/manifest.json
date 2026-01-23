@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "name": "SalesService",
+    "slug": "sales-service",
+    "description": "Service description placeholder",
+    "language": "typescript"
+  },
+  "interfaces": {
+    "grpc": {
+      "sales": {
+        "file": "proto/sales.proto",
+        "service": "SalesService",
+        "port": 5000
+      }
+    }
+  }
+}
