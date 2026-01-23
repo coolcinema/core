@@ -3,20 +3,19 @@ import * as path from "path";
 import * as yaml from "js-yaml";
 import chalk from "chalk";
 import { Octokit } from "@octokit/rest";
-import { Platform, PushContext } from "@coolcinema/platform";
+import { Platform, PushContext, PortDefinition } from "@coolcinema/platform";
 
-// Интерфейс манифеста (должен совпадать с тем, что генерирует init)
 interface Manifest {
   metadata: {
     name: string;
     slug: string;
     description: string;
+    ports?: PortDefinition[]; // <-- Новое поле в манифесте (генерируется CLI)
   };
   interfaces: Record<string, any>;
 }
 
 export const pushCommand = async () => {
-  // 1. Setup & Auth
   const token = process.env.COOLCINEMA_GH_PKG_TOKEN;
   if (!token) {
     console.error(chalk.red("❌ Missing COOLCINEMA_GH_PKG_TOKEN"));
@@ -28,7 +27,6 @@ export const pushCommand = async () => {
   const REPO = "core";
   const BRANCH = "main";
 
-  // 2. Read Manifest
   const manifestPath = path.join(process.cwd(), "coolcinema.yaml");
   if (!fs.existsSync(manifestPath)) {
     console.error(chalk.red("❌ coolcinema.yaml not found."));
@@ -41,7 +39,6 @@ export const pushCommand = async () => {
     chalk.blue(`🚀 Pushing service: ${metadata.name} (${metadata.slug})...`),
   );
 
-  // 3. Prepare Files (In Memory)
   const filesToUpload: Array<{ path: string; content: string }> = [];
 
   const context: PushContext = {
@@ -52,7 +49,7 @@ export const pushCommand = async () => {
       if (!fs.existsSync(fullPath)) {
         throw new Error(`File not found: ${localPath}`);
       }
-      return fs.readFileSync(fullPath, "utf8"); // Читаем как utf8, не base64 (createBlob закодирует)
+      return fs.readFileSync(fullPath, "utf8");
     },
 
     addFile(remotePath: string, content: string) {
@@ -60,10 +57,14 @@ export const pushCommand = async () => {
     },
   };
 
-  // Сохраняем структуру: metadata + interfaces
-  const catalogData: any = { metadata, interfaces: {} };
+  // Инициализируем metadata с пустым массивом портов
+  const catalogData: any = {
+    metadata: { ...metadata, ports: [] },
+    interfaces: {},
+  };
 
-  // 4. Process Modules
+  const allPorts: PortDefinition[] = [];
+
   for (const [moduleId, config] of Object.entries(interfaces)) {
     const module = Platform.get(moduleId);
 
@@ -76,7 +77,6 @@ export const pushCommand = async () => {
 
     console.log(`Processing ${moduleId}...`);
 
-    // A. Валидация (Zod)
     const parseResult = module.schema.safeParse(config);
     if (!parseResult.success) {
       console.error(chalk.red(`❌ Invalid configuration for ${moduleId}:`));
@@ -84,21 +84,33 @@ export const pushCommand = async () => {
       process.exit(1);
     }
 
-    // B. Запуск логики модуля
-    const moduleRegistryData = await module.onPush(context, parseResult.data);
-    catalogData.interfaces[moduleId] = moduleRegistryData;
+    // Получаем результат (registryData + ports)
+    // ВАЖНО: PlatformModule.onPush теперь возвращает { registryData, ports }
+    const { registryData, ports } = await module.onPush(
+      context,
+      parseResult.data,
+    );
+
+    catalogData.interfaces[moduleId] = registryData;
+
+    if (ports && Array.isArray(ports)) {
+      allPorts.push(...ports);
+    }
   }
 
-  // 5. Add Manifest
+  // Убираем дубликаты портов (по номеру порта)
+  const uniquePorts = Array.from(
+    new Map(allPorts.map((p) => [p.port, p])).values(),
+  );
+  catalogData.metadata.ports = uniquePorts;
+
   const serviceBasePath = `packages/catalog/services/${metadata.slug}`;
   filesToUpload.push({
     path: "manifest.json",
     content: JSON.stringify(catalogData, null, 2),
   });
 
-  // 6. ATOMIC COMMIT via Git Data API
   try {
-    // A. Get current ref
     const { data: ref } = await octokit.git.getRef({
       owner: OWNER,
       repo: REPO,
@@ -106,7 +118,6 @@ export const pushCommand = async () => {
     });
     const latestCommitSha = ref.object.sha;
 
-    // B. Get latest commit tree
     const { data: commit } = await octokit.git.getCommit({
       owner: OWNER,
       repo: REPO,
@@ -114,7 +125,6 @@ export const pushCommand = async () => {
     });
     const baseTreeSha = commit.tree.sha;
 
-    // C. Create blobs and tree items
     const treeItems = [];
     for (const file of filesToUpload) {
       const fullPath = `${serviceBasePath}/${file.path}`;
@@ -128,13 +138,12 @@ export const pushCommand = async () => {
 
       treeItems.push({
         path: fullPath,
-        mode: "100644", // file
+        mode: "100644",
         type: "blob",
         sha: blob.sha,
       });
     }
 
-    // D. Create new tree
     const { data: newTree } = await octokit.git.createTree({
       owner: OWNER,
       repo: REPO,
@@ -142,16 +151,14 @@ export const pushCommand = async () => {
       tree: treeItems as any,
     });
 
-    // E. Create commit
     const { data: newCommit } = await octokit.git.createCommit({
       owner: OWNER,
       repo: REPO,
-      message: `chore(catalog): update ${metadata.slug}`, // Можно убрать skip ci
+      message: `chore(catalog): update ${metadata.slug}`,
       tree: newTree.sha,
       parents: [latestCommitSha],
     });
 
-    // F. Update ref (Force push logic effectively)
     await octokit.git.updateRef({
       owner: OWNER,
       repo: REPO,
