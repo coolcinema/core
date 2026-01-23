@@ -116,7 +116,8 @@ export const GrpcModule: PlatformModule = {
     const properties: OptionalKind<GetAccessorDeclarationStructure>[] = [];
 
     for (const [key, iface] of Object.entries(registryConfig.interfaces)) {
-      const moduleName = path.basename(iface.file, ".proto");
+      // Сохраняем путь к файлу (например, proto/identity), чтобы импорт был корректным
+      const moduleName = iface.file.replace(".proto", "");
       const clientName = `${iface.service}Client`;
       const importAlias = `${serviceName}${key}Client`;
 
