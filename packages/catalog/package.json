@@ -7,17 +7,18 @@
     "build": "tsx scripts/build.ts && tsc"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
     "long": "^5.0.0",
     "protobufjs": "^7.0.0"
   },
   "devDependencies": {
-    "@coolcinema/platform": "workspace:*",
     "@bufbuild/buf": "^1.48.0",
-    "ts-proto": "^1.170.0",
-    "grpc-tools": "^1.12.4",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0",
+    "@coolcinema/platform": "workspace:*",
+    "@types/node": "^20.0.0",
     "glob": "^10.0.0",
-    "@types/node": "^20.0.0"
+    "grpc-tools": "^1.12.4",
+    "ts-proto": "^1.170.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
   }
 }

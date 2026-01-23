@@ -84,8 +84,10 @@ export const GrpcModule: PlatformModule<
 
     // Создаем index.ts, который экспортирует все сгенерированные файлы
     const exportStatements = protoFiles.map((f) => {
-      const baseName = path.basename(f, ".proto");
-      return `export * from './${baseName}';`;
+      // f = "proto/identity.proto" -> "./proto/identity"
+      // Используем replace, чтобы сохранить путь, но сменить расширение
+      const importPath = "./" + f.replace(".proto", "");
+      return `export * from '${importPath}';`;
     });
 
     fs.writeFileSync(
