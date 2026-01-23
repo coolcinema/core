@@ -9,7 +9,7 @@
     "grpc": {
       "YOUR_INTERFACE_NAME": {
         "file": "proto/identity.proto",
-        "service": "YourServiceName",
+        "service": "identity",
         "port": 5000
       }
     }
