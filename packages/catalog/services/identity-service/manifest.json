@@ -1,18 +1,18 @@
 {
-  "version": "1.0.0",
   "metadata": {
     "name": "IdentityService",
     "slug": "identity-service",
     "description": "Service description placeholder",
-    "language": "typescript",
-    "repository": "identity-service"
+    "language": "typescript"
   },
   "interfaces": {
     "grpc": {
-      "identity": {
-        "file": "proto/identity.proto",
-        "service": "IdentityService",
-        "port": 5000
+      "interfaces": {
+        "identity": {
+          "file": "proto/identity.proto",
+          "service": "IdentityService",
+          "port": 5000
+        }
       }
     }
   }

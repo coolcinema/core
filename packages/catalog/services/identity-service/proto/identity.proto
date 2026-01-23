@@ -14,4 +14,3 @@ message GetPriceResponse {
   int32 amount = 1;
   string currency = 2;
 }
-
