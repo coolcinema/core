@@ -75,7 +75,7 @@ export const GrpcModule: PlatformModule = {
     const cmd = [
       "grpc_tools_node_protoc",
       `--ts_proto_out=${ctx.outDir}`,
-      "--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,esModuleInterop=true,useOptionals=messages",
+      "--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,esModuleInterop=true",
       `-I ${ctx.serviceDir}`,
       protoFiles.map((f) => path.join(ctx.serviceDir, f)).join(" "),
     ].join(" ");
