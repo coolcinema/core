@@ -1,6 +1,6 @@
 {
   "name": "@coolcinema/cli",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "CoolCinema Platform CLI",
   "main": "index.js",
   "scripts": {
