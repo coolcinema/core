@@ -1,6 +1,6 @@
 {
   "name": "@coolcinema/contracts",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": {
     "generate": "buf generate protos",
     "build": "pnpm run generate && tsc"
