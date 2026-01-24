@@ -1,9 +1,10 @@
+import * as path from "path";
 import { Handler } from "./index";
 import { CONFIG } from "../config";
 
 interface GrpcConfig {
   [key: string]: {
-    proto: string;
+    files: string[];
     port: number;
   };
 }
@@ -15,15 +16,21 @@ export const GrpcHandler: Handler = {
     const ports: Array<{ name: string; port: number; protocol: string }> = [];
 
     for (const [key, contract] of Object.entries(config)) {
-      const content = await ctx.readFile(contract.proto);
+      const uploadedFiles: string[] = [];
 
-      const fileName = `${ctx.serviceSlug}_${key}.proto`;
-      const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/protos/${fileName}`;
+      for (const filePath of contract.files) {
+        // @ts-ignore
+        const content = await ctx.readFile(filePath);
 
-      ctx.uploadFile(remotePath, content);
+        const fileName = `${ctx.serviceSlug}_${path.basename(filePath)}`;
+        const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/protos/${fileName}`;
+
+        ctx.uploadFile(remotePath, content);
+        uploadedFiles.push(`protos/${fileName}`);
+      }
 
       registryData[key] = {
-        files: [`protos/${fileName}`],
+        files: uploadedFiles,
         port: contract.port,
       };
 

@@ -6,5 +6,6 @@ metadata:
 
 # grpc:
 #   main:
-#     proto: src/proto/service.proto
+#     files:
+#       - src/proto/service.proto
 #     port: 5000
