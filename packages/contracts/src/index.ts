@@ -1,7 +1,7 @@
 import registryData from "./registry.json";
 
 export interface ServiceContract {
-  file: string; // путь относительно корня пакета
+  files: string[];
   port: number;
 }
 
