@@ -4,8 +4,8 @@ metadata:
   slug: my-service
   description: "Service description"
 
-# grpc:
-#   main:
-#     files:
-#       - src/proto/service.proto
-#     port: 5000
+  # grpc:
+  #   main:
+  #     files:
+  #       - src/proto/service.proto
+  #     port: 5000
