@@ -12,7 +12,10 @@ export const initCommand = async () => {
 
   const dirName = path.basename(process.cwd());
 
+  // Читаем шаблон из файла
   let content = fs.readFileSync(CONFIG.PATHS.TEMPLATE, "utf8");
+
+  // Подставляем значения
   content = content
     .replace("MyService", toPascalCase(dirName))
     .replace("my-service", dirName);

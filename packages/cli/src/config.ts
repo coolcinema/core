@@ -11,7 +11,7 @@ export const CONFIG = {
     BRANCH: "main",
   },
   PATHS: {
-    TEMPLATE: path.join(__dirname, "../../templates/coolcinema.yaml"),
+    TEMPLATE: path.join(__dirname, "../templates/coolcinema.yaml"),
     MANIFEST: "coolcinema.yaml",
     REGISTRY_JSON: "packages/contracts/src/registry.json",
     CONTRACTS_ROOT: "packages/contracts",
