@@ -1,3 +1,16 @@
 {
-  "services": {}
+  "services": {
+    "identity-service": {
+      "host": "identity-service",
+      "name": "IdentityService",
+      "slug": "identity-service",
+      "description": "Service description",
+      "grpc": {
+        "identity": {
+          "proto": "src/proto/identity.proto",
+          "port": 5000
+        }
+      }
+    }
+  }
 }
