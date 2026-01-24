@@ -7,24 +7,30 @@ import { GitHubService } from "../utils/github";
 import { RegistryManager } from "../utils/registry";
 import { handlers, PushContext } from "../handlers";
 
+interface Manifest {
+  metadata: {
+    name: string;
+    slug: string;
+    description: string;
+  };
+  [key: string]: any;
+}
+
 export const pushCommand = async () => {
-  // 1. Init Utils
   const gh = new GitHubService();
   const regManager = new RegistryManager(gh);
 
-  // 2. Read Manifest
   if (!fs.existsSync(CONFIG.PATHS.MANIFEST)) {
     console.error(chalk.red("❌ Manifest not found"));
     process.exit(1);
   }
   const manifest = yaml.load(
     fs.readFileSync(CONFIG.PATHS.MANIFEST, "utf8"),
-  ) as any;
+  ) as Manifest;
   const { metadata, ...sections } = manifest;
 
   console.log(chalk.blue(`🚀 Pushing ${metadata.name}...`));
 
-  // 3. Prepare Context
   const filesQueue: any[] = [];
   const context: PushContext = {
     serviceSlug: metadata.slug,
@@ -36,21 +42,40 @@ export const pushCommand = async () => {
     },
   };
 
-  // 4. Process Handlers
   await regManager.fetch();
   const interfacesData: any = {};
+  const allPorts: any[] = [];
 
   for (const [key, config] of Object.entries(sections)) {
     if (key === "version") continue;
     if (handlers[key]) {
       console.log(`Processing ${key}...`);
-      interfacesData[key] = await handlers[key].push(context, config);
+      const result = await handlers[key].push(context, config);
+
+      interfacesData[key] = result.registryData;
+      if (result.expose) allPorts.push(...result.expose);
     }
   }
 
-  // 5. Update Registry & Commit
   regManager.updateService(metadata.slug, metadata, interfacesData);
   filesQueue.push(regManager.getFile());
+
+  // --- Создаем конфиг для ArgoCD ---
+  const appConfig = {
+    metadata: {
+      name: metadata.name,
+      slug: metadata.slug,
+      // Дедупликация портов
+      // @ts-ignore
+      ports: [...new Map(allPorts.map((p) => [p.port, p])).values()],
+    },
+  };
+
+  filesQueue.push({
+    path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}.json`,
+    content: JSON.stringify(appConfig, null, 2),
+  });
+  // --------------------------------
 
   try {
     const sha = await gh.createAtomicCommit(

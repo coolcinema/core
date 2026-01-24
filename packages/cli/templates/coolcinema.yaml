@@ -1,0 +1,10 @@
+version: 1.0.0
+metadata:
+  name: MyService
+  slug: my-service
+  description: "Service description"
+
+# grpc:
+#   main:
+#     proto: src/proto/service.proto
+#     port: 5000

@@ -6,8 +6,13 @@ export interface PushContext {
   uploadFile(remotePath: string, content: string): void;
 }
 
+export interface HandlerResult {
+  registryData: any;
+  expose?: Array<{ port: number; name: string; protocol: string }>;
+}
+
 export interface Handler {
-  push(ctx: PushContext, config: any): Promise<any>;
+  push(ctx: PushContext, config: any): Promise<HandlerResult>;
 }
 
 export const handlers: Record<string, Handler> = {

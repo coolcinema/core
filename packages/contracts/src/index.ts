@@ -1,7 +1,7 @@
 import registryData from "./registry.json";
 
 export interface ServiceContract {
-  file: string;
+  file: string; // путь относительно корня пакета
   port: number;
 }
 
@@ -14,8 +14,11 @@ export interface ServiceDef {
 
 export type RegistryType = Record<string, ServiceDef>;
 
+// Экспортируем данные с типом
 export const Registry: RegistryType = registryData.services;
 
+// Хелпер для получения gRPC адреса
+// createGrpcAddress(Registry['identity-service'], 'main') -> "identity-service:5000"
 export function getGrpcAddress(
   service: ServiceDef,
   interfaceName = "main",

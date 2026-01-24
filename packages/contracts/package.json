@@ -6,7 +6,8 @@
   "files": [
     "dist",
     "protos",
-    "schemas"
+    "schemas",
+    "apps"
   ],
   "scripts": {
     "build": "tsc"
