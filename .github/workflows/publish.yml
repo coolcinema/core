@@ -43,6 +43,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           pnpm -r exec npm version patch --no-git-tag-version --force
 
+      - name: Clean Artifacts
+        run: rm -rf packages/*/dist packages/*/*.tsbuildinfo
+
       - name: Build All Packages
         run: pnpm -r build
         # Теперь это просто tsc во всех пакетах:
