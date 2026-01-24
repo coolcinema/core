@@ -7,10 +7,11 @@
       "description": "Service description",
       "grpc": {
         "identity": {
-          "proto": "src/proto/identity.proto",
+          "files": ["protos/..."],
           "port": 5000
         }
       }
     }
   }
 }
+
