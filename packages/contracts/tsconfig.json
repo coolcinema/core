@@ -2,14 +2,11 @@
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
-    "target": "es2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src", // Важно!
-    "baseUrl": ".",
+    "resolveJsonModule": true,
     "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true
+    "target": "es2021",
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": ["src/**/*"]
 }

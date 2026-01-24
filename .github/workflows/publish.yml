@@ -10,7 +10,6 @@ concurrency:
 
 jobs:
   publish:
-    # Игнорируем коммиты, сделанные самим ботом (чтобы не уйти в бесконечный цикл)
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     permissions:
@@ -36,27 +35,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         env:
-          # Токен нужен для скачивания приватных пакетов (@coolcinema/*) из registry
           COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bump Versions
         run: |
-          # 1. Настройка Git для бота
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # 2. Поднятие версии (Patch) во всех пакетах
-          # --no-git-tag-version: тег не нужен, мы просто пушим коммит
           pnpm -r exec npm version patch --no-git-tag-version --force
 
       - name: Build All Packages
         run: pnpm -r build
-        # Эта команда запустит скрипты "build" в топологическом порядке:
-        # 1. @coolcinema/platform (tsc)
-        # 2. @coolcinema/catalog (tsx scripts/build.ts -> компиляция proto -> tsc)
-        # 3. @coolcinema/foundation (tsc)
-        # 4. @coolcinema/api (tsx scripts/build.ts -> генерация фасада -> tsc)
-        # 5. @coolcinema/cli (tsc)
+        # Теперь это просто tsc во всех пакетах:
+        # 1. @coolcinema/contracts (сборка index.ts)
+        # 2. @coolcinema/foundation (сборка SDK)
+        # 3. @coolcinema/cli (сборка инструмента)
 
       - name: Publish to GitHub Registry
         run: pnpm -r publish --no-git-checks
@@ -68,6 +60,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(release): update versions [skip ci]"
-          # Мы коммитим только package.json.
-          # Сгенерированные файлы (src/index.ts) считаются артефактами сборки и не хранятся в git.
           file_pattern: "packages/**/package.json"

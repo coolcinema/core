@@ -1,33 +1,29 @@
 {
   "name": "@coolcinema/foundation",
-  "version": "1.0.22",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w"
-  },
-  "peerDependencies": {
-    "@grpc/grpc-js": "^1.14.3",
-    "amqplib": "^0.10.9"
-  },
-  "devDependencies": {
-    "@types/amqplib": "^0.10.8",
-    "@types/node": "^25.0.9",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "build": "tsc"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.68.0",
-    "@opentelemetry/exporter-trace-otlp-grpc": "^0.210.0",
-    "@opentelemetry/resources": "^2.4.0",
-    "@opentelemetry/sdk-node": "^0.210.0",
-    "@opentelemetry/semantic-conventions": "^1.39.0",
-    "nice-grpc": "^2.1.14",
-    "nice-grpc-common": "^2.0.2"
+    "nice-grpc": "^2.1.0",
+    "nice-grpc-common": "^2.0.0",
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/sdk-node": "^0.51.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.45.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.51.0",
+    "@opentelemetry/resources": "^1.24.0",
+    "@opentelemetry/semantic-conventions": "^1.24.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0"
   }
 }

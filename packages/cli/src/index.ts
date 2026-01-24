@@ -10,10 +10,7 @@ const program = new Command();
 program
   .name("coolcinema")
   .description("CoolCinema Platform CLI")
-  .version("2.0.0");
-
-// Группируем всё под 'service' или 'project'
-// Но для простоты:
+  .version("3.0.0");
 
 program
   .command("init")

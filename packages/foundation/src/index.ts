@@ -1,5 +1,3 @@
-export * from "./context/store";
-export * from "./grpc/server-utils";
-export * from "./grpc/client-interceptor";
-export * from "./grpc/factory";
-export * from "./telemetry";
+export * as Context from "./context/store";
+export * as Grpc from "./grpc";
+export * as Telemetry from "./telemetry";
