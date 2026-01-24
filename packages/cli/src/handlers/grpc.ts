@@ -18,6 +18,12 @@ export const GrpcHandler: Handler = {
     for (const [key, contract] of Object.entries(config)) {
       const uploadedFiles: string[] = [];
 
+      // Validation
+      if (!contract.files || !Array.isArray(contract.files)) {
+        console.warn(`⚠️  Interface '${key}' missing 'files' array. Skipping.`);
+        continue;
+      }
+
       for (const filePath of contract.files) {
         // @ts-ignore
         const content = await ctx.readFile(filePath);
