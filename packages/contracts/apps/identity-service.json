@@ -4,9 +4,17 @@
     "slug": "identity-service",
     "ports": [
       {
-        "name": "grpc",
+        "name": "http-api",
         "port": 5000,
         "protocol": "TCP"
+      }
+    ],
+    "ingress": [
+      {
+        "name": "api",
+        "port": 5000,
+        "host": "api.identity-service.coolcinema.local",
+        "path": "/"
       }
     ]
   }

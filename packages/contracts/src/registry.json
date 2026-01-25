@@ -12,6 +12,12 @@
           ],
           "port": 5000
         }
+      },
+      "ingress": {
+        "api": {
+          "port": 5000,
+          "path": "/"
+        }
       }
     },
     "sales-service": {
