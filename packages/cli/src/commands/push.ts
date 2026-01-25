@@ -5,7 +5,8 @@ import chalk from "chalk";
 import { CONFIG } from "../config";
 import { GitHubService } from "../utils/github";
 import { RegistryManager } from "../utils/registry";
-import { handlers, PushContext } from "../handlers";
+import { handlers } from "../handlers";
+import { PushContext } from "../types";
 
 interface Manifest {
   metadata: {
@@ -35,7 +36,11 @@ export const pushCommand = async () => {
   const context: PushContext = {
     serviceSlug: metadata.slug,
     async readFile(p) {
-      return fs.readFileSync(path.resolve(p), "utf8");
+      const fullPath = path.resolve(p);
+      if (!fs.existsSync(fullPath)) {
+        throw new Error(`File not found: ${fullPath}`);
+      }
+      return fs.readFileSync(fullPath, "utf8");
     },
     uploadFile(p, c) {
       filesQueue.push({ path: p, content: c });
@@ -46,26 +51,34 @@ export const pushCommand = async () => {
   const interfacesData: any = {};
   const allPorts: any[] = [];
 
+  console.log("[DEBUG] Manifest sections:", Object.keys(sections));
+  console.log("[DEBUG] Available handlers:", Object.keys(handlers));
+
   for (const [key, config] of Object.entries(sections)) {
     if (key === "version") continue;
+
     if (handlers[key]) {
       console.log(`Processing ${key}...`);
-      const result = await handlers[key].push(context, config);
-
-      interfacesData[key] = result.registryData;
-      if (result.expose) allPorts.push(...result.expose);
+      try {
+        const result = await handlers[key].push(context, config);
+        interfacesData[key] = result.registryData;
+        if (result.expose) allPorts.push(...result.expose);
+      } catch (err: any) {
+        console.error(chalk.red(`❌ Error processing ${key}:`), err.message);
+        process.exit(1);
+      }
+    } else {
+      console.log(`[DEBUG] No handler for section: ${key}`);
     }
   }
 
   regManager.updateService(metadata.slug, metadata, interfacesData);
   filesQueue.push(regManager.getFile());
 
-  // --- Создаем конфиг для ArgoCD ---
   const appConfig = {
     metadata: {
       name: metadata.name,
       slug: metadata.slug,
-      // Дедупликация портов
       // @ts-ignore
       ports: [...new Map(allPorts.map((p) => [p.port, p])).values()],
     },
@@ -75,7 +88,6 @@ export const pushCommand = async () => {
     path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}.json`,
     content: JSON.stringify(appConfig, null, 2),
   });
-  // --------------------------------
 
   try {
     const sha = await gh.createAtomicCommit(

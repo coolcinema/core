@@ -1,6 +1,6 @@
 import * as path from "path";
-import { Handler } from "./index";
 import { CONFIG } from "../config";
+import { Handler } from "../types";
 
 interface GrpcConfig {
   [key: string]: {
@@ -15,16 +15,21 @@ export const GrpcHandler: Handler = {
     const registryData: any = {};
     const ports: Array<{ name: string; port: number; protocol: string }> = [];
 
+    console.log(
+      "[DEBUG] GrpcHandler started. Config keys:",
+      Object.keys(config),
+    );
+
     for (const [key, contract] of Object.entries(config)) {
       const uploadedFiles: string[] = [];
 
-      // Validation
       if (!contract.files || !Array.isArray(contract.files)) {
-        console.warn(`⚠️  Interface '${key}' missing 'files' array. Skipping.`);
+        console.warn(`⚠️  Skipping interface '${key}': missing 'files' array.`);
         continue;
       }
 
       for (const filePath of contract.files) {
+        console.log(`[DEBUG] Reading file: ${filePath}`);
         // @ts-ignore
         const content = await ctx.readFile(filePath);
 
