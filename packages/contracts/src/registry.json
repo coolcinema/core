@@ -13,6 +13,20 @@
           "port": 5000
         }
       }
+    },
+    "sales-service": {
+      "host": "sales-service",
+      "name": "SalesService",
+      "slug": "sales-service",
+      "description": "Service description",
+      "grpc": {
+        "main": {
+          "files": [
+            "protos/sales-service_sales.proto"
+          ],
+          "port": 5000
+        }
+      }
     }
   }
 }
