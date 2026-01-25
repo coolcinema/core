@@ -14,7 +14,9 @@ export class InfraBuilder {
   }
 
   buildHelmValues(metadata: any) {
+    // Дедупликация портов
     const uniquePorts = [
+      // @ts-ignore
       ...new Map(this.config.ports?.map((p) => [p.port, p])).values(),
     ];
 

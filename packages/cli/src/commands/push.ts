@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
 import chalk from "chalk";
-import * as yaml from "js-yaml";
 import { CONFIG } from "../config";
 import { GitHubService } from "../utils/github";
 import { RegistryManager } from "../utils/registry";
@@ -56,12 +55,12 @@ export const pushCommand = async () => {
   regManager.updateService(metadata.slug, metadata, interfacesData);
   filesQueue.push(regManager.getFile());
 
-  // Генерируем Helm Values (YAML)
+  // Генерируем Helm Values (JSON!)
   const helmValues = infra.buildHelmValues(metadata);
 
   filesQueue.push({
-    path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}.yaml`, // Важно! YAML
-    content: yaml.dump(helmValues),
+    path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}${CONFIG.PATHS.APP_EXT}`,
+    content: JSON.stringify(helmValues, null, 2),
   });
 
   try {
