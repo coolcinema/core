@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import chalk from "chalk";
+import * as yaml from "js-yaml";
 import { CONFIG } from "../config";
 import { GitHubService } from "../utils/github";
 import { RegistryManager } from "../utils/registry";
@@ -23,9 +24,8 @@ export const pushCommand = async () => {
     serviceSlug: metadata.slug,
     async readFile(p) {
       const fullPath = path.resolve(p);
-      if (!fs.existsSync(fullPath)) {
+      if (!fs.existsSync(fullPath))
         throw new Error(`File not found: ${fullPath}`);
-      }
       return fs.readFileSync(fullPath, "utf8");
     },
     uploadFile(p, c) {
@@ -35,7 +35,6 @@ export const pushCommand = async () => {
 
   await regManager.fetch();
   const interfacesData: any = {};
-
   const infra = new InfraBuilder();
 
   for (const [key, config] of Object.entries(sections)) {
@@ -45,12 +44,8 @@ export const pushCommand = async () => {
       console.log(`Processing ${key}...`);
       try {
         const result = await handlers[key].push(context, config);
-
         interfacesData[key] = result.registryData;
-
-        if (result.appConfig) {
-          infra.add(result.appConfig);
-        }
+        if (result.appConfig) infra.add(result.appConfig);
       } catch (err: any) {
         console.error(chalk.red(`❌ Error processing ${key}:`), err.message);
         process.exit(1);
@@ -61,11 +56,12 @@ export const pushCommand = async () => {
   regManager.updateService(metadata.slug, metadata, interfacesData);
   filesQueue.push(regManager.getFile());
 
-  const appConfig = infra.build(metadata);
+  // Генерируем Helm Values (YAML)
+  const helmValues = infra.buildHelmValues(metadata);
 
   filesQueue.push({
-    path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}.json`,
-    content: JSON.stringify(appConfig, null, 2),
+    path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}.yaml`, // Важно! YAML
+    content: yaml.dump(helmValues),
   });
 
   try {

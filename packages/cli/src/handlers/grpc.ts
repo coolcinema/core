@@ -36,10 +36,8 @@ export const GrpcHandler: HandlerModule = {
       for (const filePath of contract.files) {
         // @ts-ignore
         const content = await ctx.readFile(filePath);
-
         const fileName = `${ctx.serviceSlug}_${path.basename(filePath)}`;
         const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/protos/${fileName}`;
-
         ctx.uploadFile(remotePath, content);
         uploadedFiles.push(`protos/${fileName}`);
       }
@@ -55,7 +53,7 @@ export const GrpcHandler: HandlerModule = {
     return {
       registryData,
       appConfig: {
-        ports: ports, // Теперь это часть appConfig
+        ports: ports,
       },
     };
   },

@@ -16,5 +16,6 @@ export const CONFIG = {
     REGISTRY_JSON: "packages/contracts/src/registry.json",
     CONTRACTS_ROOT: "packages/contracts",
     APPS_DIR: "packages/contracts/apps",
+    APP_EXT: ".yaml", // Новая константа (хотя в коде мы использовали хардкод '.yaml', можно и так)
   },
 };

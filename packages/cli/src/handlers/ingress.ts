@@ -24,15 +24,12 @@ export const IngressHandler: HandlerModule = {
 
   async push(ctx, rawConfig) {
     const config = rawConfig as z.infer<typeof IngressSectionSchema>;
-
     const ingressRules: any[] = [];
     const ports: any[] = [];
 
     console.log("[DEBUG] IngressHandler processing keys:", Object.keys(config));
 
     for (const [key, rule] of Object.entries(config)) {
-      // Генерируем дефолтный хост, если не задан: {key}.{slug}.coolcinema.local
-      // Если key == 'main', то просто {slug}.coolcinema.local
       const prefix = key === "main" ? "" : `${key}.`;
       const host = rule.host || `${prefix}${ctx.serviceSlug}.coolcinema.local`;
 
@@ -43,7 +40,7 @@ export const IngressHandler: HandlerModule = {
         path: rule.path,
       });
 
-      // Если мы хотим ingress на этот порт, он должен быть открыт в Service
+      // Открываем порт в Service
       ports.push({
         name: `http-${key}`,
         port: rule.port,
@@ -52,7 +49,7 @@ export const IngressHandler: HandlerModule = {
     }
 
     return {
-      registryData: config, // Сохраняем "как есть" в реестр для справки
+      registryData: config,
       appConfig: {
         ingress: ingressRules,
         ports: ports,

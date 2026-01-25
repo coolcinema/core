@@ -8,29 +8,26 @@ export class InfraBuilder {
   };
 
   add(partial: AppConfig) {
-    if (partial.ports) {
-      this.config.ports?.push(...partial.ports);
-    }
-    if (partial.ingress) {
-      this.config.ingress?.push(...partial.ingress);
-    }
-    if (partial.env) {
-      Object.assign(this.config.env!, partial.env);
-    }
+    if (partial.ports) this.config.ports?.push(...partial.ports);
+    if (partial.ingress) this.config.ingress?.push(...partial.ingress);
+    if (partial.env) Object.assign(this.config.env!, partial.env);
   }
 
-  build(metadata: any) {
+  buildHelmValues(metadata: any) {
     const uniquePorts = [
       ...new Map(this.config.ports?.map((p) => [p.port, p])).values(),
     ];
 
     return {
-      metadata: {
-        name: metadata.name,
-        slug: metadata.slug,
-        ports: uniquePorts,
-        ingress: this.config.ingress,
+      fullnameOverride: metadata.slug,
+      image: {
+        repository: `ghcr.io/coolcinema/${metadata.slug}`,
       },
+      service: {
+        ports: uniquePorts,
+      },
+      ingress: this.config.ingress || [],
+      env: this.config.env,
     };
   }
 }
