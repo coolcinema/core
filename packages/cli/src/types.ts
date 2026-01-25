@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface PushContext {
   serviceSlug: string;
   readFile(path: string): Promise<string>;
@@ -9,6 +11,8 @@ export interface HandlerResult {
   expose?: Array<{ port: number; name: string; protocol: string }>;
 }
 
-export interface Handler {
+export interface HandlerModule {
   push(ctx: PushContext, config: any): Promise<HandlerResult>;
+  schema: z.ZodTypeAny;
+  defaults?: any;
 }

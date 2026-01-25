@@ -1,8 +1,6 @@
 import { GrpcHandler } from "./grpc";
-import { Handler } from "../types";
+import { HandlerModule } from "../types";
 
-export const handlers: Record<string, Handler> = {
+export const handlers: Record<string, HandlerModule> = {
   grpc: GrpcHandler,
 };
-
-export * from "../types";

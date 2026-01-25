@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import chalk from "chalk";
-import { CONFIG } from "../config";
+import { generateTemplate } from "../manifest/generator";
 
 export const initCommand = async () => {
   const targetPath = path.join(process.cwd(), "coolcinema.yaml");
@@ -11,17 +11,13 @@ export const initCommand = async () => {
   }
 
   const dirName = path.basename(process.cwd());
+  const name = toPascalCase(dirName);
+  const slug = dirName;
 
-  // Читаем шаблон из файла
-  let content = fs.readFileSync(CONFIG.PATHS.TEMPLATE, "utf8");
-
-  // Подставляем значения
-  content = content
-    .replace("MyService", toPascalCase(dirName))
-    .replace("my-service", dirName);
+  const content = generateTemplate(name, slug);
 
   fs.writeFileSync(targetPath, content);
-  console.log(chalk.green("✅ Created coolcinema.yaml"));
+  console.log(chalk.green("✅ Created coolcinema.yaml from schemas"));
 };
 
 function toPascalCase(str: string) {

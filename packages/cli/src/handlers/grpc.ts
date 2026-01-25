@@ -1,35 +1,39 @@
 import * as path from "path";
+import { z } from "zod";
 import { CONFIG } from "../config";
-import { Handler } from "../types";
+import { HandlerModule } from "../types";
 
-interface GrpcConfig {
-  [key: string]: {
-    files: string[];
-    port: number;
-  };
-}
+const GrpcInterfaceSchema = z
+  .object({
+    files: z.array(z.string()),
+    port: z.number(),
+  })
+  .strict();
 
-export const GrpcHandler: Handler = {
-  async push(ctx, rawConfig: any) {
-    const config = rawConfig as GrpcConfig;
+const GrpcSectionSchema = z.record(z.string(), GrpcInterfaceSchema);
+
+const defaults = {
+  main: {
+    files: ["src/proto/service.proto"],
+    port: 5000,
+  },
+};
+
+export const GrpcHandler: HandlerModule = {
+  schema: GrpcSectionSchema,
+  defaults,
+
+  async push(ctx, rawConfig) {
+    const config = rawConfig as z.infer<typeof GrpcSectionSchema>;
     const registryData: any = {};
-    const ports: Array<{ name: string; port: number; protocol: string }> = [];
+    const ports: any[] = [];
 
-    console.log(
-      "[DEBUG] GrpcHandler started. Config keys:",
-      Object.keys(config),
-    );
+    console.log("[DEBUG] GrpcHandler processing keys:", Object.keys(config));
 
     for (const [key, contract] of Object.entries(config)) {
       const uploadedFiles: string[] = [];
 
-      if (!contract.files || !Array.isArray(contract.files)) {
-        console.warn(`⚠️  Skipping interface '${key}': missing 'files' array.`);
-        continue;
-      }
-
       for (const filePath of contract.files) {
-        console.log(`[DEBUG] Reading file: ${filePath}`);
         // @ts-ignore
         const content = await ctx.readFile(filePath);
 
@@ -45,9 +49,7 @@ export const GrpcHandler: Handler = {
         port: contract.port,
       };
 
-      if (contract.port) {
-        ports.push({ name: "grpc", port: contract.port, protocol: "TCP" });
-      }
+      ports.push({ name: "grpc", port: contract.port, protocol: "TCP" });
     }
 
     return { registryData, expose: ports };
