@@ -52,6 +52,11 @@ export const GrpcHandler: HandlerModule = {
       ports.push({ name: "grpc", port: contract.port, protocol: "TCP" });
     }
 
-    return { registryData, expose: ports };
+    return {
+      registryData,
+      appConfig: {
+        ports: ports, // Теперь это часть appConfig
+      },
+    };
   },
 };

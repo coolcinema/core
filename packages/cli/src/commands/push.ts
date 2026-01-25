@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as path from "path";
 import chalk from "chalk";
 import { CONFIG } from "../config";
 import { GitHubService } from "../utils/github";
@@ -5,8 +7,7 @@ import { RegistryManager } from "../utils/registry";
 import { loadManifest } from "../manifest/validator";
 import { handlers } from "../handlers";
 import { PushContext } from "../types";
-import * as path from "path";
-import * as fs from "fs";
+import { InfraBuilder } from "../infra/builder";
 
 export const pushCommand = async () => {
   const gh = new GitHubService();
@@ -22,8 +23,9 @@ export const pushCommand = async () => {
     serviceSlug: metadata.slug,
     async readFile(p) {
       const fullPath = path.resolve(p);
-      if (!fs.existsSync(fullPath))
+      if (!fs.existsSync(fullPath)) {
         throw new Error(`File not found: ${fullPath}`);
+      }
       return fs.readFileSync(fullPath, "utf8");
     },
     uploadFile(p, c) {
@@ -33,7 +35,8 @@ export const pushCommand = async () => {
 
   await regManager.fetch();
   const interfacesData: any = {};
-  const allPorts: any[] = [];
+
+  const infra = new InfraBuilder();
 
   for (const [key, config] of Object.entries(sections)) {
     if (key === "version") continue;
@@ -42,8 +45,12 @@ export const pushCommand = async () => {
       console.log(`Processing ${key}...`);
       try {
         const result = await handlers[key].push(context, config);
+
         interfacesData[key] = result.registryData;
-        if (result.expose) allPorts.push(...result.expose);
+
+        if (result.appConfig) {
+          infra.add(result.appConfig);
+        }
       } catch (err: any) {
         console.error(chalk.red(`❌ Error processing ${key}:`), err.message);
         process.exit(1);
@@ -54,14 +61,7 @@ export const pushCommand = async () => {
   regManager.updateService(metadata.slug, metadata, interfacesData);
   filesQueue.push(regManager.getFile());
 
-  const appConfig = {
-    metadata: {
-      name: metadata.name,
-      slug: metadata.slug,
-      // @ts-ignore
-      ports: [...new Map(allPorts.map((p) => [p.port, p])).values()],
-    },
-  };
+  const appConfig = infra.build(metadata);
 
   filesQueue.push({
     path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}.json`,
