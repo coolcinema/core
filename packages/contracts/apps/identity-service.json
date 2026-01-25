@@ -2,6 +2,12 @@
   "metadata": {
     "name": "IdentityService",
     "slug": "identity-service",
-    "ports": []
+    "ports": [
+      {
+        "name": "grpc",
+        "port": 5000,
+        "protocol": "TCP"
+      }
+    ]
   }
 }

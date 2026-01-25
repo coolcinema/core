@@ -8,7 +8,7 @@
       "grpc": {
         "main": {
           "files": [
-            "src/proto/1identity.proto"
+            "protos/identity-service_identity.proto"
           ],
           "port": 5000
         }
