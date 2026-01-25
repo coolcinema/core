@@ -1,21 +1,24 @@
 {
-  "metadata": {
-    "name": "IdentityService",
-    "slug": "identity-service",
+  "fullnameOverride": "identity-service",
+  "image": {
+    "repository": "ghcr.io/coolcinema/identity-service"
+  },
+  "service": {
     "ports": [
       {
         "name": "http-api",
         "port": 5000,
         "protocol": "TCP"
       }
-    ],
-    "ingress": [
-      {
-        "name": "api",
-        "port": 5000,
-        "host": "api.identity-service.coolcinema.local",
-        "path": "/"
-      }
     ]
-  }
+  },
+  "ingress": [
+    {
+      "name": "api",
+      "port": 5000,
+      "host": "api.identity-service.coolcinema.local",
+      "path": "/"
+    }
+  ],
+  "env": {}
 }
