@@ -7,6 +7,7 @@ import { InitCommand } from "./commands/init.command";
 import { PushCommand } from "./commands/push.command";
 import { handlers } from "./handlers";
 import { GitHubService } from "./services/github.service";
+import { HostsCommand } from "./commands/hosts.command";
 
 dotenv.config();
 
@@ -47,6 +48,15 @@ program
       ghService,
       handlers,
     );
+    await cmd.execute();
+  });
+
+program
+  .command("hosts")
+  .description("Generate /etc/hosts configuration")
+  .action(async () => {
+    const registryService = new RegistryService(ghService);
+    const cmd = new HostsCommand(registryService);
     await cmd.execute();
   });
 
