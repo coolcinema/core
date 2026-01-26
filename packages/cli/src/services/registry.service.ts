@@ -1,7 +1,7 @@
-import { GitHubService } from "./github";
 import { CONFIG } from "../config";
+import { GitHubService } from "./github.service";
 
-export class RegistryManager {
+export class RegistryService {
   private data: any = { services: {} };
 
   constructor(private gh: GitHubService) {}
@@ -17,11 +17,11 @@ export class RegistryManager {
     this.data.services[slug] = {
       host: slug,
       ...metadata,
-      ...interfaces, // grpc: {...}, http: {...}
+      ...interfaces,
     };
   }
 
-  getFile() {
+  getArtifact() {
     return {
       path: CONFIG.PATHS.REGISTRY_JSON,
       content: JSON.stringify(this.data, null, 2),

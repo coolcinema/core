@@ -3,7 +3,7 @@ import { CONFIG } from "../config";
 
 export interface FileToUpload {
   path: string;
-  content: string; // utf-8 content
+  content: string;
 }
 
 export class GitHubService {

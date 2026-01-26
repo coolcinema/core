@@ -1,6 +1,7 @@
 import { AppConfig } from "../types";
+import { CONFIG } from "../config";
 
-export class InfraBuilder {
+export class InfraService {
   private config: AppConfig = {
     ports: [],
     ingress: [],
@@ -13,14 +14,14 @@ export class InfraBuilder {
     if (partial.env) Object.assign(this.config.env!, partial.env);
   }
 
-  buildHelmValues(metadata: any) {
-    // Дедупликация портов
-    const uniquePorts = [
-      // @ts-ignore
-      ...new Map(this.config.ports?.map((p) => [p.port, p])).values(),
-    ];
+  createArtifact(metadata: any): { path: string; content: string } {
+    const uniquePorts =
+      this.config.ports?.filter(
+        (port, index, self) =>
+          index === self.findIndex((p) => p.port === port.port),
+      ) || [];
 
-    return {
+    const values = {
       fullnameOverride: metadata.slug,
       image: {
         repository: `ghcr.io/coolcinema/${metadata.slug}`,
@@ -30,6 +31,11 @@ export class InfraBuilder {
       },
       ingress: this.config.ingress || [],
       env: this.config.env,
+    };
+
+    return {
+      path: `${CONFIG.PATHS.APPS_DIR}/${metadata.slug}${CONFIG.PATHS.APP_EXT}`,
+      content: JSON.stringify(values, null, 2),
     };
   }
 }

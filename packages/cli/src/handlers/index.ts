@@ -1,8 +1,8 @@
-import { GrpcHandler } from "./grpc";
+import { GrpcHandler } from "./grpc.handler";
+import { IngressHandler } from "./ingress.handler";
 import { HandlerModule } from "../types";
-import { IngressHandler } from "./ingress";
 
 export const handlers: Record<string, HandlerModule> = {
-  grpc: GrpcHandler,
-  ingress: IngressHandler,
+  grpc: new GrpcHandler(),
+  ingress: new IngressHandler(),
 };

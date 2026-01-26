@@ -20,8 +20,8 @@ export interface PushContext {
 }
 
 export interface HandlerResult {
-  registryData: any; // Данные для registry.json
-  appConfig?: AppConfig; // Данные для инфраструктуры (ArgoCD)
+  registryData: any;
+  appConfig?: AppConfig;
 }
 
 export interface HandlerModule {
