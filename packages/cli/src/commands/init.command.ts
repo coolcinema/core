@@ -23,6 +23,7 @@ export class InitCommand implements ICommand {
     }
   }
 
+  //
   private toPascalCase(str: string) {
     return str
       .replace(/(?:^\w|[A-Z]|\b\w)/g, (w) => w.toUpperCase())

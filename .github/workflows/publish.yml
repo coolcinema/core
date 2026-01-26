@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v3
         with:
@@ -37,29 +38,45 @@ jobs:
         env:
           COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump Versions
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          pnpm -r exec npm version patch --no-git-tag-version --force
+
+      - name: Bump Versions (Smart Patch)
+        id: bump
+        run: |
+          FILTER="...[HEAD~1]"
+
+          echo "Detecting changes with filter: $FILTER"
+
+          if pnpm --filter "$FILTER" list --depth -1 | grep -q "@coolcinema"; then
+             echo "Changes detected."
+             pnpm --filter "$FILTER" exec npm version patch --no-git-tag-version
+             echo "changed=true" >> $GITHUB_OUTPUT
+             echo "filter=$FILTER" >> $GITHUB_OUTPUT
+          else
+             echo "No packages changed."
+             echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Clean Artifacts
+        if: steps.bump.outputs.changed == 'true'
         run: rm -rf packages/*/dist packages/*/*.tsbuildinfo
 
-      - name: Build All Packages
-        run: pnpm -r build
-        # Теперь это просто tsc во всех пакетах:
-        # 1. @coolcinema/contracts (сборка index.ts)
-        # 2. @coolcinema/foundation (сборка SDK)
-        # 3. @coolcinema/cli (сборка инструмента)
+      - name: Build Changed Packages
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm --filter "${{ steps.bump.outputs.filter }}" run build
 
-      - name: Publish to GitHub Registry
-        run: pnpm -r publish --no-git-checks
+      - name: Publish Changed Packages
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm --filter "${{ steps.bump.outputs.filter }}" publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit Version Bumps
+        if: steps.bump.outputs.changed == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(release): update versions [skip ci]"
