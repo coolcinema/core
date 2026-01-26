@@ -16,4 +16,5 @@ export const CONFIG = {
     APPS_DIR: "packages/contracts/apps",
     APP_EXT: ".json",
   },
+  INFRA_DOMAINS: ["argo.coolcinema.local", "jaeger.coolcinema.local"],
 };
