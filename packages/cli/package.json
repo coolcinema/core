@@ -1,6 +1,6 @@
 {
   "name": "@coolcinema/cli",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "bin": {
     "coolcinema": "./dist/index.js"
   },
