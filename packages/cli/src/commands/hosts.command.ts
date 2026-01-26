@@ -9,17 +9,18 @@ export class HostsCommand implements ICommand {
 
   async execute() {
     this.registryService.loadFromLocal();
-    const services = this.registryService.getServices();
+    const services = this.registryService.getServices() as Record<string, any>;
 
     const domains = new Set<string>();
 
-    // Статические домены из конфига
     CONFIG.INFRA_DOMAINS.forEach((d) => domains.add(d));
 
-    // Динамические домены сервисов
     for (const svc of Object.values(services)) {
-      if (svc.ingress) {
-        for (const rule of Object.values(svc.ingress as Record<string, any>)) {
+      const service = svc as any;
+      if (service.ingress) {
+        for (const rule of Object.values(
+          service.ingress as Record<string, any>,
+        )) {
           if (rule.host) {
             domains.add(rule.host);
           }
@@ -36,15 +37,20 @@ export class HostsCommand implements ICommand {
 
     console.log("\nRun this command to update /etc/hosts:");
 
-    // Идемпотентная команда: удаляет старую запись (по маркеру) и добавляет новую
     const marker = "# coolcinema-managed";
     const line = `${hostsLine} ${marker}`;
 
-    // sed удаляет строки с маркером
-    // echo | tee -a добавляет новую строку (с sudo)
     const cmd = `sudo sed -i '/${marker}/d' /etc/hosts && echo '${line}' | sudo tee -a /etc/hosts > /dev/null`;
 
-    console.log(chalk.green(cmd));
+    console.log(chalk.yellow("Executing with sudo:"), cmd);
+
+    try {
+      child_process.execSync(cmd, { stdio: "inherit" });
+      console.log(chalk.green("✅ /etc/hosts updated successfully!"));
+    } catch (e: any) {
+      console.error(chalk.red("❌ Failed to update hosts:"), e.message);
+      console.log("Try running manually:", cmd);
+    }
   }
 
   private async getMinikubeIp(): Promise<string> {
