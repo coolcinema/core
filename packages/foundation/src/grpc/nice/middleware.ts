@@ -9,8 +9,8 @@ import {
 } from "nice-grpc";
 import { getCurrentContext, runInContext } from "../../context/store";
 import { CONTEXT_KEYS, PROPAGATION_HEADERS } from "../../context/keys";
+import { Propagator } from "../../context/propagator";
 
-// Client: Inject context into metadata
 export const clientMiddleware: ClientMiddleware = async function* <
   Request,
   Response,
@@ -23,18 +23,8 @@ export const clientMiddleware: ClientMiddleware = async function* <
         ? options.metadata
         : new Metadata(options.metadata);
 
-    // 1. Trace ID
-    if (ctx.traceId) {
-      metadata.set(CONTEXT_KEYS.TRACE_ID, ctx.traceId);
-    }
-
-    // 2. Generic Headers
-    Object.entries(ctx.headers).forEach(([k, v]) => {
-      // Избегаем дублирования TraceID, если он есть в headers
-      if (k === CONTEXT_KEYS.TRACE_ID) return;
-
-      if (Array.isArray(v)) v.forEach((val) => metadata.append(k, val));
-      else metadata.set(k, v);
+    Propagator.inject(ctx, (key, values) => {
+      values.forEach((v) => metadata.append(key, v));
     });
 
     options.metadata = metadata;
@@ -43,7 +33,6 @@ export const clientMiddleware: ClientMiddleware = async function* <
   return yield* call.next(call.request, options);
 };
 
-// Server: Extract context from metadata
 export const serverMiddleware: ServerMiddleware = async function* <
   Request,
   Response,
@@ -51,7 +40,6 @@ export const serverMiddleware: ServerMiddleware = async function* <
   const metadata = context.metadata;
   const headers: Record<string, string | string[]> = {};
 
-  // 1. Извлекаем все известные заголовки
   for (const key of PROPAGATION_HEADERS) {
     const val = metadata.get(key);
     if (val) {
@@ -59,7 +47,6 @@ export const serverMiddleware: ServerMiddleware = async function* <
     }
   }
 
-  // 2. Формируем контекст
   const appCtx = {
     traceId:
       typeof headers[CONTEXT_KEYS.TRACE_ID] === "string"
@@ -68,7 +55,6 @@ export const serverMiddleware: ServerMiddleware = async function* <
     headers,
   };
 
-  // 3. Запускаем в контексте
   const generator = runInContext(appCtx, () =>
     call.next(call.request, context),
   );

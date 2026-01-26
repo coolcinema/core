@@ -7,7 +7,7 @@ import { CONFIG } from "../config";
 const HttpInterfaceSchema = z
   .object({
     port: z.number(),
-    spec: z.string().optional(), // Путь к OpenAPI файлу (yaml/json)
+    spec: z.string().optional(),
   })
   .strict();
 
@@ -32,28 +32,23 @@ export class HttpHandler extends BaseHandler<HttpItem> {
   ) {
     let specPathRemote: string | undefined;
 
-    // 1. Upload Spec (если есть)
     if (item.spec) {
-      // @ts-ignore
       const content = await ctx.readFile(item.spec);
 
       const ext = path.extname(item.spec);
-      const fileName = `${ctx.serviceSlug}_${key}${ext}`; // identity-service_api.yaml
+      const fileName = `${ctx.serviceSlug}_${key}${ext}`;
       const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/schemas/${fileName}`;
 
       ctx.uploadFile(remotePath, content);
 
-      // Путь относительно корня пакета contracts (для использования в npm)
       specPathRemote = `schemas/${fileName}`;
     }
 
-    // 2. Registry Data
     result.registryData[key] = {
       port: item.port,
       spec: specPathRemote,
     };
 
-    // 3. App Config (открываем порт в Service)
     result.appConfig!.ports!.push({
       name: `http-${key}`,
       port: item.port,
