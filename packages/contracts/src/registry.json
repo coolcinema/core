@@ -14,8 +14,8 @@
         }
       },
       "ingress": {
-        "api": {
-          "port": 5000,
+        "main": {
+          "port": 3000,
           "path": "/"
         }
       }
