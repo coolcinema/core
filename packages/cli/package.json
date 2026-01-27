@@ -10,6 +10,11 @@
   "scripts": {
     "build": "rm -rf dist && tsc"
   },
+  "pnpm": {
+    "overrides": {
+      "@opentelemetry/api": "1.8.0"
+    }
+  },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
     "@opentelemetry/api": "1.8.0",
@@ -17,6 +22,7 @@
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
     "js-yaml": "^4.1.1",
+    "openapi-typescript": "^7.10.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

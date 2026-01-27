@@ -48,3 +48,26 @@ export function createClient<Paths extends {}>(
 
   return client;
 }
+
+/**
+ * Создает коллекцию типизированных клиентов.
+ * @example
+ * const clients = Http.createClients<MyClientsType>(Registry, {
+ *   sales: 'sales-service',
+ *   tickets: 'tickets-service'
+ * });
+ */
+export function createClients<T>(
+  registry: any,
+  serviceMap: Record<keyof T, string>,
+): T {
+  const clients = {} as any;
+
+  for (const [key, slug] of Object.entries(serviceMap)) {
+    // Создаем клиент для каждого сервиса
+    // Типизация (Client<Paths>) ляжет сверху благодаря дженерику T
+    clients[key] = createClient(registry, slug as string);
+  }
+
+  return clients as T;
+}

@@ -8,6 +8,7 @@ import { PushCommand } from "./commands/push.command";
 import { handlers } from "./handlers";
 import { GitHubService } from "./services/github.service";
 import { HostsCommand } from "./commands/hosts.command";
+import { GenHttpCommand } from "./commands/gen-http.command";
 
 dotenv.config();
 
@@ -57,6 +58,14 @@ program
   .action(async () => {
     const registryService = new RegistryService(ghService);
     const cmd = new HostsCommand(registryService);
+    await cmd.execute();
+  });
+
+program
+  .command("gen-http")
+  .description("Generate TypeScript types from OpenAPI schemas")
+  .action(async () => {
+    const cmd = new GenHttpCommand();
     await cmd.execute();
   });
 
