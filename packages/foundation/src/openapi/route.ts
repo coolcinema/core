@@ -1,4 +1,3 @@
-import { RouteConfig } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 export interface RouteOptions<
@@ -27,23 +26,11 @@ export function createRoute<
 >(options: RouteOptions<P, B, Q, R>) {
   const status = options.status || 200;
 
-  const config: RouteConfig = {
-    method: options.method,
-    path: options.path,
+  // Формируем Operation Object для zod-openapi
+  const operation: any = {
     summary: options.summary,
     description: options.description,
     tags: options.tags,
-    request: {
-      params: options.params,
-      query: options.query,
-      body: options.body
-        ? {
-            content: {
-              "application/json": { schema: options.body },
-            },
-          }
-        : undefined,
-    },
     responses: {
       [status]: {
         description: "Success",
@@ -54,8 +41,26 @@ export function createRoute<
     },
   };
 
+  // Параметры (Path, Query)
+  if (options.params || options.query) {
+    operation.requestParams = {};
+    if (options.params) operation.requestParams.path = options.params;
+    if (options.query) operation.requestParams.query = options.query;
+  }
+
+  // Тело запроса
+  if (options.body) {
+    operation.requestBody = {
+      content: {
+        "application/json": { schema: options.body },
+      },
+    };
+  }
+
   return {
-    config,
+    path: options.path,
+    method: options.method,
+    config: operation,
     // Тип функции-обработчика для реализации
     Handler: {} as (req: {
       params: z.infer<P>;
@@ -67,8 +72,6 @@ export function createRoute<
 
 /**
  * Утилита для вывода типов хендлеров из объекта роутов.
- * @example
- * export type ApiHandlers = InferHandlers<typeof routes>;
  */
 export type InferHandlers<T extends Record<string, { Handler: any }>> = {
   [K in keyof T]: T[K]["Handler"];

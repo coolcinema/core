@@ -13,7 +13,6 @@
     }
   },
   "dependencies": {
-    "@asteasolutions/zod-to-openapi": "^8.4.0",
     "@opentelemetry/api": "~1.8.0",
     "@opentelemetry/auto-instrumentations-node": "^0.45.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.51.0",
@@ -23,7 +22,8 @@
     "nice-grpc": "^2.1.0",
     "nice-grpc-common": "^2.0.0",
     "openapi-fetch": "^0.15.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-openapi": "^5.4.6"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",
