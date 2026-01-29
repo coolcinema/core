@@ -1,3 +1,4 @@
+//  packages/cli/src/index.ts
 import { Command } from "commander";
 import * as dotenv from "dotenv";
 import { ManifestService } from "./services/manifest.service";
@@ -9,6 +10,7 @@ import { handlers } from "./handlers";
 import { GitHubService } from "./services/github.service";
 import { HostsCommand } from "./commands/hosts.command";
 import { GenHttpCommand } from "./commands/gen-http.command";
+import { GenEventsCommand } from "./commands/gen-events.command";
 
 dotenv.config();
 
@@ -19,12 +21,8 @@ program
   .description("CoolCinema Platform CLI")
   .version("3.0.0");
 
-// --- Dependency Injection ---
-// Singleton Services
 const manifestService = new ManifestService(handlers);
-const ghService = new GitHubService(); // Lazy init inside if needed, or check env here
-
-// --- Commands ---
+const ghService = new GitHubService();
 
 program
   .command("init")
@@ -38,7 +36,6 @@ program
   .command("push")
   .description("Publish service configuration and contracts to the Catalog")
   .action(async () => {
-    // Services per execution scope (Transient)
     const registryService = new RegistryService(ghService);
     const infraService = new InfraService();
 
@@ -66,6 +63,14 @@ program
   .description("Generate TypeScript types from OpenAPI schemas")
   .action(async () => {
     const cmd = new GenHttpCommand();
+    await cmd.execute();
+  });
+
+program
+  .command("gen-events")
+  .description("Generate TypeScript types from AsyncAPI schemas")
+  .action(async () => {
+    const cmd = new GenEventsCommand();
     await cmd.execute();
   });
 
