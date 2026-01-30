@@ -20,7 +20,7 @@ export class HttpHandler extends BaseHandler<HttpItem> {
   defaults = {
     api: {
       port: 3000,
-      spec: "dist/openapi.yaml",
+      spec: "src/contracts/openapi/api.yaml",
     },
   };
 

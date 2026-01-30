@@ -16,7 +16,7 @@ export class EventsHandler extends BaseHandler<EventsItem> {
   schema = EventsInterfaceSchema;
 
   defaults = {
-    spec: "src/events/asyncapi.yaml",
+    spec: "src/contracts/events/asyncapi.yaml",
   };
 
   async push(ctx: PushContext, rawConfig: any): Promise<HandlerResult> {

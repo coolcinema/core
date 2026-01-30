@@ -9,7 +9,7 @@ export class GenEventsCommand implements ICommand {
     const contractsDir = path.resolve(
       "node_modules/@coolcinema/contracts/events",
     );
-    const outDir = path.resolve("src/generated/events");
+    const outDir = path.resolve("src/_gen/events");
 
     if (!fs.existsSync(contractsDir)) {
       console.log("No events contracts found.");

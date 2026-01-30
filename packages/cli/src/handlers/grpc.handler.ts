@@ -19,7 +19,7 @@ export class GrpcHandler extends BaseHandler<GrpcItem> {
   schema = GrpcSectionSchema;
   defaults = {
     main: {
-      files: ["src/proto/service.proto"],
+      files: ["src/contracts/grpc/service.proto"],
       port: 5000,
     },
   };

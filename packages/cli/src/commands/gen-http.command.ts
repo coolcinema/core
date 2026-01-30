@@ -6,10 +6,12 @@ import { ICommand } from "./base.command";
 
 export class GenHttpCommand implements ICommand {
   async execute() {
+    console.log(chalk.blue("🔨 Generating HTTP types..."));
+
     const contractsDir = path.resolve(
       "node_modules/@coolcinema/contracts/schemas",
     );
-    const outDir = path.resolve("src/generated/http");
+    const outDir = path.resolve("src/_gen/http");
 
     if (!fs.existsSync(contractsDir)) {
       console.error(
@@ -17,7 +19,7 @@ export class GenHttpCommand implements ICommand {
           `❌ Contracts not found at ${contractsDir}. Install @coolcinema/contracts.`,
         ),
       );
-      process.exit(1);
+      return; // Не падаем, просто выходим
     }
 
     if (!fs.existsSync(outDir)) {
