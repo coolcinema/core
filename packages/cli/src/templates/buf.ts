@@ -1,10 +1,11 @@
 import { CONFIG } from "../config";
 
 export function getBufWorkYaml() {
+  // Важно: указываем имя пакета (@coolcinema/contracts), а не путь в репо
   return `version: v1
 directories:
   - ${CONFIG.PATHS.LOCAL_CONTRACTS.ROOT}
-  - node_modules/${CONFIG.PATHS.CONTRACTS_ROOT}/protos
+  - node_modules/@coolcinema/contracts/protos
 `;
 }
 
@@ -21,10 +22,11 @@ plugins:
       - esModuleInterop=true
     path: ./node_modules/.bin/protoc-gen-ts_proto
 
-  # HTTP (OpenAPI Spec v3)
-  - plugin: buf.build/google/gnostic
+  # HTTP (Swagger 2.0 / OpenAPI v2)
+  # Используем стабильный плагин grpc-ecosystem
+  - plugin: buf.build/grpc-ecosystem/openapiv2
     out: ${CONFIG.PATHS.LOCAL_GEN.HTTP_SPEC}
     opt:
-      - openapi_out=openapi.yaml
+      - json_names_for_fields=false
 `;
 }
