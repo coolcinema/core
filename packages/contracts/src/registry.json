@@ -12,12 +12,6 @@
           ],
           "port": 5000
         }
-      },
-      "ingress": {
-        "main": {
-          "port": 3000,
-          "path": "/"
-        }
       }
     },
     "sales-service": {

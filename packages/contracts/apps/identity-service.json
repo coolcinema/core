@@ -9,22 +9,9 @@
         "name": "grpc",
         "port": 5000,
         "protocol": "TCP"
-      },
-      {
-        "name": "http-main",
-        "port": 3000,
-        "protocol": "TCP"
       }
     ]
   },
-  "ingress": [
-    {
-      "name": "main",
-      "port": 3000,
-      "host": "identity-service.coolcinema.local",
-      "path": "/"
-    }
-  ],
+  "ingress": [],
   "env": {}
 }
-

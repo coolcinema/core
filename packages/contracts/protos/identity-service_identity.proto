@@ -1,16 +1,16 @@
 syntax = "proto3";
-
-package coolcinema.identity;
+package coolcinema.identity.rpc;
 
 service IdentityService {
-  rpc GetPrice (GetPriceRequest) returns (GetPriceResponse);
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
 }
 
-message GetPriceRequest {
-  string showtime_id = 1;
+message GetUserRequest {
+  string id = 1;
 }
 
-message GetPriceResponse {
-  int32 amount = 1;
-  string currency = 2;
+message GetUserResponse {
+  string id = 1;
+  string email = 2;
+  bool is_active = 3;
 }
