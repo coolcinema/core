@@ -1,5 +1,6 @@
 syntax = "proto3";
 package coolcinema.gateway.http;
+option go_package = "coolcinema/gateway/http";
 
 // Используем вендорные аннотации из пакета contracts
 import "google/api/annotations.proto";
