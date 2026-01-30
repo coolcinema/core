@@ -13,6 +13,17 @@ export class GenHttpCommand implements ICommand {
 
     if (!fs.existsSync(path.resolve(srcDir))) return;
 
+    const template = JSON.stringify({
+      version: "v1",
+      plugins: [
+        {
+          plugin: "buf.build/grpc-ecosystem/openapiv2",
+          out: "src/_gen/http-spec",
+          opt: ["json_names_for_fields=false"],
+        },
+      ],
+    });
+
     try {
       console.log("🔨 Generating HTTP spec...");
 
