@@ -10,7 +10,6 @@ import { handlers } from "./handlers";
 import { InitCommand } from "./commands/init.command";
 import { PushCommand } from "./commands/push.command";
 import { HostsCommand } from "./commands/hosts.command";
-import { GenCommand } from "./commands/gen.command";
 import { GenGrpcCommand } from "./commands/gen-grpc.command";
 import { GenHttpCommand } from "./commands/gen-http.command";
 import { GenEventsCommand } from "./commands/gen-events.command";
@@ -56,6 +55,16 @@ program
   });
 
 // --- Code Generation ---
+
+program
+  .command("gen")
+  .description("Generate ALL types (gRPC, Events, HTTP)")
+  .action(async () => {
+    console.log("🚀 Generating all artifacts...");
+    await new GenGrpcCommand().execute();
+    await new GenEventsCommand().execute();
+    await new GenHttpCommand().execute();
+  });
 
 program
   .command("gen:grpc")

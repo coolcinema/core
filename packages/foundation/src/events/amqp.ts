@@ -17,7 +17,7 @@ export class AmqpTransport {
 
     if (!url) {
       throw new Error(
-        "RabbitMQ URI is not defined. Check registry.json (brokers.rabbitmq) or provide config.",
+        "RabbitMQ URI is not defined. Check registry.json or provide config.",
       );
     }
 

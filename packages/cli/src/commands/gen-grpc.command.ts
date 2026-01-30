@@ -1,50 +1,41 @@
-import * as path from "path";
-import * as fs from "fs";
 import { execSync } from "child_process";
-import chalk from "chalk";
 import { ICommand } from "./base.command";
+import * as fs from "fs";
+import * as path from "path";
 
 export class GenGrpcCommand implements ICommand {
   async execute() {
-    console.log(chalk.blue("🔨 Generating gRPC types..."));
+    const srcDir = "src/contracts/grpc";
 
-    const contractsDir = path.resolve(
-      "node_modules/@coolcinema/contracts/protos",
-    );
-    const outDir = path.resolve("src/_gen/grpc");
+    if (!fs.existsSync(path.resolve(srcDir))) return;
 
-    if (!fs.existsSync(contractsDir)) {
-      console.log(chalk.yellow("⚠️ No gRPC contracts found in node_modules."));
-      return;
-    }
-
-    if (!fs.existsSync(outDir)) {
-      fs.mkdirSync(outDir, { recursive: true });
-    }
-
-    const files = fs
-      .readdirSync(contractsDir)
-      .filter((f) => f.endsWith(".proto"))
-      .map((f) => path.join(contractsDir, f));
-
-    if (files.length === 0) return;
-
-    const pluginPath = path.resolve("node_modules/.bin/protoc-gen-ts_proto");
-
-    const cmd = [
-      "protoc",
-      `--plugin=protoc-gen-ts_proto=${pluginPath}`,
-      `--ts_proto_out=${outDir}`,
-      `--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,useExactTypes=false,esModuleInterop=true`,
-      `-I ${contractsDir}`,
-      ...files,
-    ].join(" ");
+    const template = JSON.stringify({
+      version: "v1",
+      plugins: [
+        {
+          plugin: "ts-proto",
+          path: "./node_modules/.bin/protoc-gen-ts_proto",
+          out: "src/_gen/grpc",
+          opt: [
+            "outputServices=nice-grpc",
+            "outputServices=generic-definitions",
+            "useExactTypes=false",
+            "esModuleInterop=true",
+          ],
+        },
+      ],
+    });
 
     try {
-      execSync(cmd, { stdio: "inherit" });
-      console.log(chalk.green("✅ gRPC types generated."));
-    } catch (e: any) {
-      console.error(chalk.red("❌ Failed to generate gRPC types:"), e.message);
+      console.log("🔨 Generating gRPC types...");
+
+      execSync(
+        `pnpm exec buf generate --path ${srcDir} --template '${template}'`,
+        { stdio: "inherit" },
+      );
+      console.log("✅ gRPC types generated.");
+    } catch (e) {
+      console.error("❌ Failed to generate gRPC types.");
     }
   }
 }

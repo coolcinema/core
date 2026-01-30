@@ -1,58 +1,61 @@
 import * as fs from "fs";
 import * as path from "path";
 import { execSync } from "child_process";
-import chalk from "chalk";
 import { ICommand } from "./base.command";
 
 export class GenHttpCommand implements ICommand {
   async execute() {
-    console.log(chalk.blue("🔨 Generating HTTP types..."));
+    const rootDir = process.cwd();
+    const srcDir = "src/contracts/http";
+    const specOutDir = path.join(rootDir, "src/_gen/http-spec");
+    const clientOutDir = path.join(rootDir, "src/_gen/http");
 
-    const contractsDir = path.resolve(
-      "node_modules/@coolcinema/contracts/schemas",
-    );
-    const outDir = path.resolve("src/_gen/http");
+    if (!fs.existsSync(path.resolve(srcDir))) return;
 
-    if (!fs.existsSync(contractsDir)) {
-      console.error(
-        chalk.red(
-          `❌ Contracts not found at ${contractsDir}. Install @coolcinema/contracts.`,
-        ),
+    // 1. Generate OpenAPI v3 Spec from Proto
+    // Используем google/gnostic для генерации v3.0
+    const template = JSON.stringify({
+      version: "v1",
+      plugins: [
+        {
+          remote: "buf.build/google/gnostic",
+          out: "src/_gen/http-spec",
+          opt: ["openapi_out=openapi.yaml"], // Gnostic specific flag
+        },
+      ],
+    });
+
+    try {
+      console.log("🔨 Generating HTTP spec (OpenAPI v3)...");
+      execSync(
+        `pnpm exec buf generate --path ${srcDir} --template '${template}'`,
+        { stdio: "inherit" },
       );
-      return; // Не падаем, просто выходим
-    }
-
-    if (!fs.existsSync(outDir)) {
-      fs.mkdirSync(outDir, { recursive: true });
-    }
-
-    console.log(chalk.blue(`🔍 Scanning schemas in ${contractsDir}...`));
-
-    const files = fs
-      .readdirSync(contractsDir)
-      .filter((f) => f.endsWith(".yaml") || f.endsWith(".json"));
-
-    if (files.length === 0) {
-      console.log(chalk.yellow("No schemas found."));
+    } catch (e) {
+      console.error("❌ OpenAPI generation failed.");
       return;
     }
 
-    for (const file of files) {
-      const name = path.basename(file, path.extname(file));
-      const input = path.join(contractsDir, file);
-      const output = path.join(outDir, `${name}.d.ts`);
+    // 2. Generate TS Client
+    if (!fs.existsSync(clientOutDir))
+      fs.mkdirSync(clientOutDir, { recursive: true });
 
-      console.log(`Generating types for ${chalk.bold(name)}...`);
+    const specFiles = fs
+      .readdirSync(specOutDir)
+      .filter((f) => f.endsWith(".json") || f.endsWith(".yaml"));
 
-      try {
-        execSync(`pnpm exec openapi-typescript "${input}" -o "${output}"`, {
-          stdio: "inherit",
-        });
-      } catch (e: any) {
-        console.error(chalk.red(`❌ Failed to generate ${name}:`), e.message);
-      }
+    for (const file of specFiles) {
+      const input = path.join(specOutDir, file);
+      const output = path.join(
+        clientOutDir,
+        file.replace(/\.(json|yaml)$/, ".ts"),
+      );
+
+      execSync(`pnpm exec openapi-typescript "${input}" -o "${output}"`, {
+        stdio: "inherit",
+      });
     }
 
-    console.log(chalk.green("✅ HTTP types generation complete."));
+    console.log("✅ HTTP client generated.");
   }
 }
