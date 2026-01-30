@@ -9,17 +9,16 @@ directories:
 }
 
 export function getBufGenYaml() {
-  return `version: v1
+  return `version: v2
 plugins:
   # gRPC & Events (TS Code)
-  - plugin: ts-proto
+  - binary: ./node_modules/.bin/protoc-gen-ts_proto
     out: ${CONFIG.PATHS.LOCAL_GEN.GRPC}
     opt:
       - outputServices=nice-grpc
       - outputServices=generic-definitions
       - useExactTypes=false
       - esModuleInterop=true
-    path: ./node_modules/.bin/protoc-gen-ts_proto
 
   # HTTP (OpenAPI Spec v3)
   - remote: buf.build/google/gnostic
