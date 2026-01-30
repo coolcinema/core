@@ -9,7 +9,7 @@ directories:
 }
 
 export function getBufGenYaml() {
-  return `version: v2
+  return `version: v1
 plugins:
   # gRPC & Events (TS Code)
   - binary: ./node_modules/.bin/protoc-gen-ts_proto
