@@ -4,12 +4,14 @@ import { ManifestService } from "./services/manifest.service";
 import { RegistryService } from "./services/registry.service";
 import { InfraService } from "./services/infra.service";
 import { GitHubService } from "./services/github.service";
+import { ScaffoldService } from "./services/scaffold.service";
 import { handlers } from "./handlers";
 
 // Commands
 import { InitCommand } from "./commands/init.command";
 import { PushCommand } from "./commands/push.command";
 import { HostsCommand } from "./commands/hosts.command";
+import { GenCommand } from "./commands/gen.command";
 import { GenGrpcCommand } from "./commands/gen-grpc.command";
 import { GenHttpCommand } from "./commands/gen-http.command";
 import { GenEventsCommand } from "./commands/gen-events.command";
@@ -25,6 +27,7 @@ program
 
 // Services
 const manifestService = new ManifestService(handlers);
+const scaffoldService = new ScaffoldService();
 const ghService = new GitHubService();
 
 // --- Core Workflow ---
@@ -33,7 +36,7 @@ program
   .command("init")
   .description("Create a new service manifest")
   .action(async () => {
-    const cmd = new InitCommand(manifestService);
+    const cmd = new InitCommand(manifestService, scaffoldService);
     await cmd.execute();
   });
 
@@ -55,7 +58,6 @@ program
   });
 
 // --- Code Generation ---
-//
 
 program
   .command("gen")
