@@ -3,30 +3,26 @@ import * as path from "path";
 import { execSync } from "child_process";
 import { ICommand } from "./base.command";
 import { CONFIG } from "../config";
+import chalk from "chalk";
 
 export class GenHttpCommand implements ICommand {
   async execute() {
     const rootDir = process.cwd();
     const srcDir = CONFIG.PATHS.LOCAL_CONTRACTS.HTTP;
+    const absPath = path.resolve(srcDir);
     const specOutDir = path.join(rootDir, CONFIG.PATHS.LOCAL_GEN.HTTP_SPEC);
     const clientOutDir = path.join(rootDir, CONFIG.PATHS.LOCAL_GEN.HTTP);
 
-    if (!fs.existsSync(path.resolve(srcDir))) return;
+    if (!fs.existsSync(absPath)) return;
 
-    const template = JSON.stringify({
-      version: "v1",
-      plugins: [
-        {
-          plugin: "buf.build/grpc-ecosystem/openapiv2",
-          out: "src/_gen/http-spec",
-          opt: ["json_names_for_fields=false"],
-        },
-      ],
-    });
+    const files = fs.readdirSync(absPath).filter((f) => f.endsWith(".proto"));
+    if (files.length === 0) {
+      console.log(chalk.gray(`Skipping HTTP: no .proto files in ${srcDir}`));
+      return;
+    }
 
     try {
       console.log("🔨 Generating HTTP spec...");
-
       execSync(`pnpm exec buf generate --path ${srcDir}`, { stdio: "inherit" });
     } catch (e) {
       console.error("❌ OpenAPI generation failed.");

@@ -3,12 +3,18 @@ import { ICommand } from "./base.command";
 import * as fs from "fs";
 import * as path from "path";
 import { CONFIG } from "../config";
+import chalk from "chalk";
 
 export class GenGrpcCommand implements ICommand {
   async execute() {
     const srcDir = CONFIG.PATHS.LOCAL_CONTRACTS.GRPC;
+    const absPath = path.resolve(srcDir);
 
-    if (!fs.existsSync(path.resolve(srcDir))) {
+    if (!fs.existsSync(absPath)) return;
+
+    const files = fs.readdirSync(absPath).filter((f) => f.endsWith(".proto"));
+    if (files.length === 0) {
+      console.log(chalk.gray(`Skipping gRPC: no .proto files in ${srcDir}`));
       return;
     }
 
