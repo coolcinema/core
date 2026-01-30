@@ -1,5 +1,6 @@
 syntax = "proto3";
 package coolcinema.identity.rpc;
+option go_package = "coolcinema/identity/rpc";
 
 service IdentityService {
   rpc GetUser (GetUserRequest) returns (GetUserResponse);
