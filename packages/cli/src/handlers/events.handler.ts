@@ -10,35 +10,42 @@ const EventsInterfaceSchema = z
   })
   .strict();
 
+const EventsSectionSchema = z.record(z.string(), EventsInterfaceSchema);
+
 type EventsItem = z.infer<typeof EventsInterfaceSchema>;
 
 export class EventsHandler extends BaseHandler<EventsItem> {
-  schema = EventsInterfaceSchema;
+  schema = EventsSectionSchema;
 
   defaults = {
-    spec: "src/contracts/events/asyncapi.yaml",
+    main: {
+      spec: "src/contracts/events/events.proto",
+    },
   };
 
   async push(ctx: PushContext, rawConfig: any): Promise<HandlerResult> {
-    const config = rawConfig as EventsItem;
+    const config = rawConfig as Record<string, EventsItem>;
     const result: HandlerResult = {
       registryData: {},
       appConfig: { ports: [], ingress: [], env: {} },
     };
 
-    console.log(`[DEBUG] EventsHandler processing spec:`, config.spec);
+    console.log(`[DEBUG] EventsHandler keys:`, Object.keys(config));
 
-    const content = await ctx.readFile(config.spec);
+    for (const [key, item] of Object.entries(config)) {
+      const content = await ctx.readFile(item.spec);
 
-    const remoteFileName = `${ctx.serviceSlug}.yaml`;
-    const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/events/${remoteFileName}`;
+      const ext = path.extname(item.spec);
+      const remoteFileName = `${ctx.serviceSlug}_${key}${ext}`;
+      const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/events/${remoteFileName}`;
 
-    ctx.uploadFile(remotePath, content);
+      ctx.uploadFile(remotePath, content);
 
-    result.registryData = {
-      spec: `events/${remoteFileName}`,
-      hasEvents: true,
-    };
+      result.registryData[key] = {
+        spec: `events/${remoteFileName}`,
+        hasEvents: true,
+      };
+    }
 
     return result;
   }
