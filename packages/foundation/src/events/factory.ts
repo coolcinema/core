@@ -3,7 +3,6 @@ import { getCurrentContext, runInContext } from "../context/store";
 import { CONTEXT_KEYS } from "../context/keys";
 import { Propagator } from "../context/propagator";
 
-// Имя хедера, который использует Telepresence (или наш кастомный)
 const INTERCEPT_HEADER =
   CONTEXT_KEYS.TELEPRESENCE || "x-telepresence-intercept-id";
 
@@ -23,16 +22,12 @@ export function createPublisher<Def extends ProtoDefinition>(
   for (const [methodKey, methodDef] of Object.entries(definition.methods)) {
     const logicalName = prefix ? `${prefix}.${methodDef.name}` : methodDef.name;
 
-    // Имена Exchange
-    const mainRouter = logicalName; // Headers Exchange
-    const fallbackRouter = `${logicalName}.fallback`; // Topic Exchange
+    const mainRouter = logicalName;
+    const fallbackRouter = `${logicalName}.fallback`;
 
-    // Инициализация топологии при старте (ленивая)
     channelWrapper.addSetup(async (channel: any) => {
-      // 1. Fallback (Prod) Exchange
       await channel.assertExchange(fallbackRouter, "topic", { durable: true });
 
-      // 2. Main (Intercept) Exchange с ссылкой на Fallback
       await channel.assertExchange(mainRouter, "headers", {
         durable: true,
         alternateExchange: fallbackRouter,
@@ -43,15 +38,11 @@ export function createPublisher<Def extends ProtoDefinition>(
       const headers: Record<string, any> = {};
       const ctx = getCurrentContext();
 
-      // Inject Trace ID & Intercept Headers
       Propagator.inject(ctx, (k, v) => {
         const val = Array.isArray(v) ? v[0] : v;
         headers[k] = val;
       });
 
-      // Публикуем всегда в Main Router.
-      // Если есть хедер перехвата -> уйдет перехватчику.
-      // Если нет -> уйдет в Fallback (Prod).
       await channelWrapper.publish(mainRouter, "", payload, {
         headers: headers,
         contentType: "application/json",
@@ -72,8 +63,6 @@ export function createConsumer(
 ) {
   const connection = transport.getChannel();
 
-  // Определяем, находимся ли мы в режиме перехвата
-  // Telepresence выставляет эту переменную или мы сами в .env
   const interceptId =
     process.env.TELEPRESENCE_INTERCEPT_ID || process.env.COOL_INTERCEPT_ID;
 
@@ -94,7 +83,6 @@ export function createConsumer(
       const fallbackRouter = `${logicalName}.fallback`;
 
       await connection.addSetup(async (channel: any) => {
-        // Убеждаемся, что топология существует (идемпотентно)
         await channel.assertExchange(fallbackRouter, "topic", {
           durable: true,
         });
@@ -108,13 +96,11 @@ export function createConsumer(
         let bindArgs: any = {};
 
         if (interceptId) {
-          // --- DEV MODE (INTERCEPT) ---
-          // Слушаем Main Router, но ТОЛЬКО если есть наш хедер
           queueName = `${myServiceSlug}.${interceptId}.listen.${logicalName}`;
           sourceExchange = mainRouter;
 
           await channel.assertQueue(queueName, {
-            exclusive: true, // Удалить при разрыве соединения
+            exclusive: true,
             autoDelete: true,
           });
 
@@ -123,27 +109,22 @@ export function createConsumer(
             [INTERCEPT_HEADER]: interceptId,
           };
 
-          // Биндинг к Headers Exchange
           await channel.bindQueue(queueName, sourceExchange, "", bindArgs);
         } else {
-          // --- PROD MODE (STANDARD) ---
-          // Слушаем Fallback Router (куда сваливается все без перехвата)
           queueName = `${myServiceSlug}.listen.${logicalName}`;
           sourceExchange = fallbackRouter;
 
           await channel.assertQueue(queueName, { durable: true });
-          // Биндинг к Topic Exchange (слушаем всё #)
+
           await channel.bindQueue(queueName, sourceExchange, "#");
         }
 
-        // Consume Logic
         await channel.consume(queueName, async (msg: any) => {
           if (!msg) return;
           try {
             const content = JSON.parse(msg.content.toString());
             const headers = msg.properties.headers || {};
 
-            // --- Trace Propagation ---
             const traceId = headers[CONTEXT_KEYS.TRACE_ID]?.toString();
             const normalizedHeaders: Record<string, string | string[]> = {};
             for (const [key, value] of Object.entries(headers)) {
@@ -161,10 +142,17 @@ export function createConsumer(
             channel.ack(msg);
           } catch (e) {
             console.error(e);
-            // channel.nack(msg);
           }
         });
       });
     },
   };
 }
+
+export type EventsPublisher<Service> = {
+  [Method in keyof Service]: (
+    request: Service[Method] extends (req: infer R, ...args: any[]) => any
+      ? R
+      : never,
+  ) => Promise<void>;
+};
