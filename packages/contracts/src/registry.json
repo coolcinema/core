@@ -22,7 +22,7 @@
       "grpc": {
         "main": {
           "files": [
-            "protos/sales-service_sales.proto"
+            "protos/sales-service_grpc_sales.proto"
           ],
           "port": 5000
         }
