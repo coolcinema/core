@@ -49,12 +49,12 @@
       "http": {
         "main": {
           "port": 3000,
-          "spec": "schemas/gateway-service_main.proto"
+          "spec": "schemas/gateway-service_http_main.proto"
         }
       },
       "events": {
         "main": {
-          "spec": "events/gateway-service_main.proto",
+          "spec": "events/gateway-service_events_main.proto",
           "hasEvents": true
         }
       }
