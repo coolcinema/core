@@ -80,7 +80,7 @@ export class PushCommand implements ICommand {
     try {
       const sha = await this.gh.createAtomicCommit(
         filesQueue,
-        `chore(registry): update ${metadata.slug}`,
+        `fix(registry): update ${metadata.slug}`,
       );
       console.log(chalk.green(`✅ Success! Commit: ${sha}`));
     } catch (e: any) {
