@@ -6,6 +6,8 @@ export function getBufWorkYaml() {
 directories:
   - ${CONFIG.PATHS.LOCAL_CONTRACTS.ROOT}
   - node_modules/@coolcinema/contracts/protos
+  - node_modules/@coolcinema/contracts/events   <-- Добавить
+  - node_modules/@coolcinema/contracts/schemas  <-- Добавить
 `;
 }
 
