@@ -1,50 +1,116 @@
-- name: Bump Versions (Smart Patch)
-  id: bump
-  run: |
-    # 1. Получаем список измененных файлов в последнем коммите
-    # Используем HEAD~1, так как checkout fetch-depth: 0 дает нам историю
-    CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+name: Publish Packages
 
-    echo "Changed files in last commit:"
-    echo "$CHANGED_FILES"
+on:
+  push:
+    branches: [main]
 
-    CHANGED=false
-    FILTERS=""
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
-    # 2. Проверяем изменения в конкретных пакетах
+jobs:
+  publish:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
 
-    # Contracts
-    if echo "$CHANGED_FILES" | grep -q "packages/contracts/"; then
-       echo "📦 Detected changes in @coolcinema/contracts"
-       FILTERS="$FILTERS --filter @coolcinema/contracts"
-       CHANGED=true
-    fi
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-    # Foundation
-    if echo "$CHANGED_FILES" | grep -q "packages/foundation/"; then
-       echo "📦 Detected changes in @coolcinema/foundation"
-       FILTERS="$FILTERS --filter @coolcinema/foundation"
-       CHANGED=true
-    fi
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
 
-    # CLI
-    if echo "$CHANGED_FILES" | grep -q "packages/cli/"; then
-       echo "📦 Detected changes in @coolcinema/cli"
-       FILTERS="$FILTERS --filter @coolcinema/cli"
-       CHANGED=true
-    fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@coolcinema"
+          cache: "pnpm"
 
-    # 3. Применяем изменения
-    if [ "$CHANGED" = "true" ]; then
-       echo "🚀 Bumping versions with filters: $FILTERS"
-       
-       # Выполняем bump только для найденных пакетов
-       pnpm $FILTERS exec npm version patch --no-git-tag-version
-       
-       # Выставляем output переменные для следующих шагов
-       echo "changed=true" >> $GITHUB_OUTPUT
-       echo "filter=$FILTERS" >> $GITHUB_OUTPUT
-    else
-       echo "💤 No relevant packages changed."
-       echo "changed=false" >> $GITHUB_OUTPUT
-    fi
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump Versions (Smart Patch)
+        id: bump
+        run: |
+          # 1. Получаем список измененных файлов в последнем коммите
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
+          echo "Changed files in last commit:"
+          echo "$CHANGED_FILES"
+
+          CHANGED=false
+          FILTERS=""
+
+          # 2. Проверяем изменения в конкретных пакетах
+
+          # Contracts
+          if echo "$CHANGED_FILES" | grep -q "packages/contracts/"; then
+             echo "📦 Detected changes in @coolcinema/contracts"
+             FILTERS="$FILTERS --filter @coolcinema/contracts"
+             CHANGED=true
+          fi
+
+          # Foundation
+          if echo "$CHANGED_FILES" | grep -q "packages/foundation/"; then
+             echo "📦 Detected changes in @coolcinema/foundation"
+             FILTERS="$FILTERS --filter @coolcinema/foundation"
+             CHANGED=true
+          fi
+
+          # CLI
+          if echo "$CHANGED_FILES" | grep -q "packages/cli/"; then
+             echo "📦 Detected changes in @coolcinema/cli"
+             FILTERS="$FILTERS --filter @coolcinema/cli"
+             CHANGED=true
+          fi
+
+          # 3. Применяем изменения
+          if [ "$CHANGED" = "true" ]; then
+             echo "🚀 Bumping versions with filters: $FILTERS"
+             
+             # Выполняем bump только для найденных пакетов
+             pnpm $FILTERS exec npm version patch --no-git-tag-version
+             
+             # Выставляем output переменные для следующих шагов
+             echo "changed=true" >> $GITHUB_OUTPUT
+             echo "filter=$FILTERS" >> $GITHUB_OUTPUT
+          else
+             echo "💤 No relevant packages changed."
+             echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Clean Artifacts
+        if: steps.bump.outputs.changed == 'true'
+        run: rm -rf packages/*/dist packages/*/*.tsbuildinfo
+
+      - name: Build Changed Packages
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm --filter "${{ steps.bump.outputs.filter }}" run build
+
+      - name: Publish Changed Packages
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm --filter "${{ steps.bump.outputs.filter }}" publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COOLCINEMA_GH_PKG_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit Version Bumps
+        if: steps.bump.outputs.changed == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(release): update versions [skip ci]"
+          file_pattern: "packages/**/package.json"
