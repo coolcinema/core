@@ -25,10 +25,10 @@ plugins:
     path: ./node_modules/.bin/protoc-gen-ts_proto
 
   # HTTP (OpenAPI v3.0)
-  # Используем gnostic для генерации современной спецификации
-  - plugin: buf.build/google/gnostic
+  # Официальный плагин для генерации v3
+  - plugin: buf.build/grpc-ecosystem/openapiv3
     out: ${CONFIG.PATHS.LOCAL_GEN.HTTP_SPEC}
     opt:
-      - openapi_out=openapi_3.0.0.yaml
+      - output_format=json
 `;
 }
