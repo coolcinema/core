@@ -4,7 +4,8 @@ import { GenGrpcCommand } from "./gen-grpc.command";
 import { GenHttpCommand } from "./gen-http.command";
 import { GenEventsCommand } from "./gen-events.command";
 import chalk from "chalk";
-import * as path from "path";
+import * as fs from "fs";
+import { CONFIG } from "../config";
 
 export class GenCommand implements ICommand {
   async execute() {
@@ -16,21 +17,16 @@ export class GenCommand implements ICommand {
       new GenHttpCommand(),
     ];
 
-    const paths = commands
-      .map((cmd) => cmd.getContractPath())
-      .filter((p): p is string => p !== null);
-
-    if (paths.length === 0) {
-      console.log(chalk.yellow("⚠️  No contract directories found."));
+    if (!fs.existsSync(CONFIG.PATHS.BUF.WORK)) {
+      console.error(
+        chalk.red("❌ buf.work.yaml not found. Run 'coolcinema init' first."),
+      );
       return;
     }
 
-    const pathArgs = paths.map((p) => `--path ${p}`).join(" ");
     try {
-      console.log(
-        `🔨 Running buf generate for: ${paths.map((p) => path.basename(p)).join(", ")}`,
-      );
-      execSync(`pnpm exec buf generate ${pathArgs}`, { stdio: "inherit" });
+      console.log(`🔨 Running buf generate (workspace)...`);
+      execSync(`pnpm exec buf generate`, { stdio: "inherit" });
       console.log("✅ Buf generation complete.");
     } catch (e) {
       console.error("❌ Buf generation failed.");
