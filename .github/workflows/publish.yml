@@ -43,53 +43,46 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Bump Versions (Smart Patch)
+      - name: Bump Versions (Dynamic Smart Patch)
         id: bump
         run: |
-          # 1. Получаем список измененных файлов в последнем коммите
+          # 1. Получаем список измененных файлов
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
 
-          echo "Changed files in last commit:"
+          echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          CHANGED=false
           FILTERS=""
+          CHANGED=false
 
-          # 2. Проверяем изменения в конкретных пакетах
+          # 2. Динамически определяем измененные пакеты в папке packages/
+          # grep "^packages/" - берем только файлы внутри packages
+          # cut -d/ -f1-2     - обрезаем путь до уровня packages/package-name
+          # sort | uniq       - оставляем уникальные директории
+          CHANGED_DIRS=$(echo "$CHANGED_FILES" | grep "^packages/" | cut -d/ -f1-2 | sort | uniq)
 
-          # Contracts
-          if echo "$CHANGED_FILES" | grep -q "packages/contracts/"; then
-             echo "📦 Detected changes in @coolcinema/contracts"
-             FILTERS="$FILTERS --filter @coolcinema/contracts"
-             CHANGED=true
-          fi
-
-          # Foundation
-          if echo "$CHANGED_FILES" | grep -q "packages/foundation/"; then
-             echo "📦 Detected changes in @coolcinema/foundation"
-             FILTERS="$FILTERS --filter @coolcinema/foundation"
-             CHANGED=true
-          fi
-
-          # CLI
-          if echo "$CHANGED_FILES" | grep -q "packages/cli/"; then
-             echo "📦 Detected changes in @coolcinema/cli"
-             FILTERS="$FILTERS --filter @coolcinema/cli"
-             CHANGED=true
-          fi
+          for dir in $CHANGED_DIRS; do
+            # Проверяем, что это действительно пакет (есть package.json)
+            if [ -f "$dir/package.json" ]; then
+               # Читаем имя пакета из package.json, используя node
+               PKG_NAME=$(node -p "require('./$dir/package.json').name")
+               
+               echo "📦 Detected changes in $PKG_NAME ($dir)"
+               FILTERS="$FILTERS --filter $PKG_NAME"
+               CHANGED=true
+            fi
+          done
 
           # 3. Применяем изменения
           if [ "$CHANGED" = "true" ]; then
              echo "🚀 Bumping versions with filters: $FILTERS"
              
-             # Выполняем bump только для найденных пакетов
              pnpm $FILTERS exec npm version patch --no-git-tag-version
              
-             # Выставляем output переменные для следующих шагов
              echo "changed=true" >> $GITHUB_OUTPUT
              echo "filter=$FILTERS" >> $GITHUB_OUTPUT
           else
-             echo "💤 No relevant packages changed."
+             echo "💤 No packages changed."
              echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
