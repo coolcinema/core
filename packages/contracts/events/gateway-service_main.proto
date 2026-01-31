@@ -14,5 +14,5 @@ message TicketSoldEvt {
   string user_id = 2;
   string showtime_id = 3;
   double price = 4;
-  string test = 5;
+  // string test = 5;
 }
