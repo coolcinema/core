@@ -34,7 +34,7 @@ export class GrpcHandler extends BaseHandler<GrpcItem> {
 
     for (const filePath of item.files) {
       const content = await ctx.readFile(filePath);
-      const fileName = `${ctx.serviceSlug}_${path.basename(filePath)}`;
+      const fileName = `${ctx.serviceSlug}_grpc_${path.basename(filePath)}`;
       const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/protos/${fileName}`;
 
       ctx.uploadFile(remotePath, content);

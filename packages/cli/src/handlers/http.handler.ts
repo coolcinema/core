@@ -36,7 +36,8 @@ export class HttpHandler extends BaseHandler<HttpItem> {
       const content = await ctx.readFile(item.spec);
 
       const ext = path.extname(item.spec);
-      const fileName = `${ctx.serviceSlug}_${key}${ext}`;
+      // Добавляем _http для уникальности
+      const fileName = `${ctx.serviceSlug}_http_${key}${ext}`;
       const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/schemas/${fileName}`;
 
       ctx.uploadFile(remotePath, content);

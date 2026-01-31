@@ -36,7 +36,8 @@ export class EventsHandler extends BaseHandler<EventsItem> {
       const content = await ctx.readFile(item.spec);
 
       const ext = path.extname(item.spec);
-      const remoteFileName = `${ctx.serviceSlug}_${key}${ext}`;
+      // Добавляем _events для уникальности
+      const remoteFileName = `${ctx.serviceSlug}_events_${key}${ext}`;
       const remotePath = `${CONFIG.PATHS.CONTRACTS_ROOT}/events/${remoteFileName}`;
 
       ctx.uploadFile(remotePath, content);
