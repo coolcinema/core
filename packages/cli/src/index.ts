@@ -63,10 +63,8 @@ program
   .command("gen")
   .description("Generate ALL types (gRPC, Events, HTTP)")
   .action(async () => {
-    console.log("🚀 Generating all artifacts...");
-    await new GenGrpcCommand().execute();
-    await new GenEventsCommand().execute();
-    await new GenHttpCommand().execute();
+    const cmd = new GenCommand(); // Используем наш новый класс-агрегатор
+    await cmd.execute();
   });
 
 program
