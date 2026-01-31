@@ -43,26 +43,31 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      # --- NEW: Auto-Vendoring Step ---
       - name: Auto-Vendor External Protos
         run: |
           echo "🔄 Running vendor scripts..."
-          # Запускаем скрипт вендоринга только для contracts
-          pnpm --filter @coolcinema/contracts run vendor
+          # Запускаем скрипт вендоринга только для contracts (если он там есть)
+          if pnpm --filter @coolcinema/contracts run vendor --if-present; then
+            echo "Vendor script executed."
+          else
+            echo "No vendor script found or failed."
+          fi
 
           # Проверяем, изменилось ли что-то
           if [ -n "$(git status --porcelain)" ]; then
             echo "📦 Vendor script generated changes. Committing..."
             git add packages/contracts/protos
             git commit -m "chore(vendor): update external protos [skip ci]"
-            # Пушим изменения обратно в ветку (опционально, но полезно для синхронизации)
             git push
+            echo "✅ Push successful."
           else
             echo "✅ No vendor changes detected."
           fi
         env:
-          # Нужен токен для пуша изменений
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # --- Version Bumping Step ---
       - name: Bump Versions (Dynamic Smart Patch)
         id: bump
         run: |
@@ -78,7 +83,7 @@ jobs:
           CHANGED=false
 
           # Ищем строки, содержащие 'packages/'
-          # Добавляем || true, чтобы grep не валил скрипт, если ничего не найдено
+          # Добавляем || true, чтобы grep не валил скрипт
           PATHS_WITH_PACKAGES=$(echo "$CHANGED_FILES" | grep "packages/" || true)
 
           if [ -z "$PATHS_WITH_PACKAGES" ]; then
