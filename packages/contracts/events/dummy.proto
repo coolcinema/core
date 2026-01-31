@@ -1,6 +1,0 @@
-syntax = "proto3";
-package coolcinema.internal.events;
-option go_package = "coolcinema/internal/events";
-
-// Infrastructure placeholder
-message Keep {}
