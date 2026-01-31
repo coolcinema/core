@@ -24,11 +24,11 @@ plugins:
       - esModuleInterop=true
     path: ./node_modules/.bin/protoc-gen-ts_proto
 
-  # HTTP (Swagger 2.0 / OpenAPI v2)
-  # Используем стабильный плагин grpc-ecosystem
-  - plugin: buf.build/grpc-ecosystem/openapiv2
+  # HTTP (OpenAPI v3.0)
+  # Используем gnostic для генерации современной спецификации
+  - plugin: buf.build/google/gnostic
     out: ${CONFIG.PATHS.LOCAL_GEN.HTTP_SPEC}
     opt:
-      - json_names_for_fields=false
+      - openapi_out=openapi_3.0.0.yaml
 `;
 }
