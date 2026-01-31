@@ -3,64 +3,79 @@ import { execSync } from "child_process";
 import { GenGrpcCommand } from "./gen-grpc.command";
 import { GenHttpCommand } from "./gen-http.command";
 import { GenEventsCommand } from "./gen-events.command";
-import chalk from "chalk";
+import { NodeModulesConflictResolver } from "../services/conflict-resolver.service";
+import { CONFIG } from "../config";
 import * as fs from "fs";
 import * as path from "path";
-import { CONFIG } from "../config";
+import chalk from "chalk";
 
 export class GenCommand implements ICommand {
+  private conflictResolver = new NodeModulesConflictResolver();
+
   async execute() {
-    console.log(
-      chalk.magenta("🕵️  [DEBUG] Starting GenCommand (Workspace Mode)"),
-    );
-
     const rootDir = process.cwd();
-    const bufWorkPath = path.resolve(rootDir, CONFIG.PATHS.BUF.WORK);
 
-    if (!fs.existsSync(bufWorkPath)) {
-      console.error(chalk.red(`❌ buf.work.yaml NOT FOUND at ${bufWorkPath}`));
-      return;
+    // 1. Pre-flight checks
+    if (!this.checkBufConfig(rootDir)) return;
+
+    // 2. Resolve Conflicts (Clean self-copies from node_modules)
+    await this.conflictResolver.resolve(rootDir);
+
+    // 3. Clean Output Dirs
+    this.cleanArtifacts(rootDir);
+
+    // 4. Generate
+    if (!this.runBuf()) return;
+
+    // 5. Post-Process
+    await this.runPostProcessors();
+
+    console.log(chalk.green("🏁 Generation complete."));
+  }
+
+  private checkBufConfig(rootDir: string): boolean {
+    const bufPath = path.resolve(rootDir, CONFIG.PATHS.BUF.WORK);
+    if (!fs.existsSync(bufPath)) {
+      console.error(chalk.red(`❌ ${CONFIG.PATHS.BUF.WORK} not found.`));
+      return false;
     }
+    return true;
+  }
 
-    console.log(chalk.yellow("🧹 Cleaning up old artifacts..."));
-    const dirsToClean = [
-      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.GRPC),
-      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.HTTP_SPEC),
-      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.HTTP),
-      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.EVENTS),
-    ];
+  private cleanArtifacts(rootDir: string) {
+    console.log(chalk.gray("🧹 Cleaning artifacts..."));
 
-    for (const dir of dirsToClean) {
-      if (fs.existsSync(dir)) {
-        fs.rmSync(dir, { recursive: true, force: true });
+    // Динамически берем все пути из конфига генерации
+    const genPaths = Object.values(CONFIG.PATHS.LOCAL_GEN);
 
-        fs.mkdirSync(dir, { recursive: true });
-      }
-    }
+    genPaths.forEach((relativePath) => {
+      const absPath = path.resolve(rootDir, relativePath);
+      // Удаляем и пересоздаем
+      fs.rmSync(absPath, { recursive: true, force: true });
+      fs.mkdirSync(absPath, { recursive: true });
+    });
+  }
 
-    console.log(chalk.yellow("🔨 Executing: pnpm exec buf generate"));
+  private runBuf(): boolean {
+    console.log(chalk.yellow("🔨 Running buf generate..."));
     try {
       execSync(`pnpm exec buf generate`, { stdio: "inherit" });
-      console.log(chalk.green("✅ Buf generation success."));
-    } catch (e: any) {
-      console.error(chalk.red("❌ Buf generation failed."));
-      process.exit(1);
+      return true;
+    } catch (e) {
+      console.error(chalk.red("❌ Buf failed."));
+      return false;
     }
+  }
 
-    console.log(chalk.magenta("🕵️  [DEBUG] Starting Post-Processing..."));
-
-    const commands = [
+  private async runPostProcessors() {
+    const strategies = [
       new GenGrpcCommand(),
       new GenEventsCommand(),
       new GenHttpCommand(),
     ];
 
-    for (const cmd of commands) {
-      if (cmd.postProcess) {
-        await cmd.postProcess();
-      }
+    for (const cmd of strategies) {
+      if (cmd.postProcess) await cmd.postProcess();
     }
-
-    console.log(chalk.green("🏁 Generation pipeline finished."));
   }
 }
