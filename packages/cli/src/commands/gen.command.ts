@@ -17,28 +17,33 @@ export class GenCommand implements ICommand {
     const rootDir = process.cwd();
     const bufWorkPath = path.resolve(rootDir, CONFIG.PATHS.BUF.WORK);
 
-    if (fs.existsSync(bufWorkPath)) {
-      console.log(chalk.cyan(`📄 Found buf.work.yaml at: ${bufWorkPath}`));
-      console.log(chalk.gray("--- Content Start ---"));
-      console.log(fs.readFileSync(bufWorkPath, "utf-8"));
-      console.log(chalk.gray("--- Content End ---"));
-    } else {
+    if (!fs.existsSync(bufWorkPath)) {
       console.error(chalk.red(`❌ buf.work.yaml NOT FOUND at ${bufWorkPath}`));
-      console.error(chalk.red("   Run 'coolcinema init' to create it."));
       return;
     }
 
-    console.log(
-      chalk.yellow(
-        "🔨 Executing: pnpm exec buf generate (without --path filters)",
-      ),
-    );
+    console.log(chalk.yellow("🧹 Cleaning up old artifacts..."));
+    const dirsToClean = [
+      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.GRPC),
+      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.HTTP_SPEC),
+      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.HTTP),
+      path.resolve(rootDir, CONFIG.PATHS.LOCAL_GEN.EVENTS),
+    ];
+
+    for (const dir of dirsToClean) {
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true, force: true });
+
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    }
+
+    console.log(chalk.yellow("🔨 Executing: pnpm exec buf generate"));
     try {
       execSync(`pnpm exec buf generate`, { stdio: "inherit" });
       console.log(chalk.green("✅ Buf generation success."));
     } catch (e: any) {
       console.error(chalk.red("❌ Buf generation failed."));
-      console.error(e.message);
       process.exit(1);
     }
 
@@ -51,12 +56,8 @@ export class GenCommand implements ICommand {
     ];
 
     for (const cmd of commands) {
-      const name = cmd.constructor.name;
       if (cmd.postProcess) {
-        console.log(chalk.blue(`   Running postProcess for ${name}...`));
         await cmd.postProcess();
-      } else {
-        console.log(chalk.gray(`   Skipping ${name} (no postProcess)`));
       }
     }
 
