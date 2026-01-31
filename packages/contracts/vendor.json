@@ -1,0 +1,7 @@
+{
+  "protos": {
+    "google/api/annotations.proto": "https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/annotations.proto",
+    "google/api/http.proto": "https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto",
+    "google/protobuf/descriptor.proto": "https://raw.githubusercontent.com/protocolbuffers/protobuf/master/src/google/protobuf/descriptor.proto"
+  }
+}

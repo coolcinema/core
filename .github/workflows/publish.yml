@@ -43,6 +43,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Auto-Vendor External Protos
+        run: |
+          echo "🔄 Running vendor scripts..."
+          # Запускаем скрипт вендоринга только для contracts
+          pnpm --filter @coolcinema/contracts run vendor
+
+          # Проверяем, изменилось ли что-то
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "📦 Vendor script generated changes. Committing..."
+            git add packages/contracts/protos
+            git commit -m "chore(vendor): update external protos [skip ci]"
+            # Пушим изменения обратно в ветку (опционально, но полезно для синхронизации)
+            git push
+          else
+            echo "✅ No vendor changes detected."
+          fi
+        env:
+          # Нужен токен для пуша изменений
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Bump Versions (Dynamic Smart Patch)
         id: bump
         run: |
