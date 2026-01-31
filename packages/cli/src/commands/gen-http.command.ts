@@ -1,6 +1,5 @@
 import * as fs from "fs";
 import * as path from "path";
-import { glob } from "glob";
 import { execSync } from "child_process";
 import { ICommand } from "./base.command";
 import { CONFIG } from "../config";
@@ -26,7 +25,8 @@ export class GenHttpCommand implements ICommand {
 
     if (!fs.existsSync(specOutDir)) return;
 
-    const specFiles = glob.sync(path.join(specOutDir, "**/*.{json,yaml}"));
+    // Ищем файлы рекурсивно (Native Recursive Search)
+    const specFiles = this.findSpecs(specOutDir);
 
     if (specFiles.length === 0) return;
 
@@ -73,5 +73,25 @@ export class GenHttpCommand implements ICommand {
     }
 
     await this.postProcess();
+  }
+
+  // Native helper to find json/yaml files recursively
+  private findSpecs(dir: string): string[] {
+    let results: string[] = [];
+    const list = fs.readdirSync(dir);
+
+    for (const file of list) {
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
+
+      if (stat && stat.isDirectory()) {
+        results = results.concat(this.findSpecs(filePath));
+      } else {
+        if (file.endsWith(".json") || file.endsWith(".yaml")) {
+          results.push(filePath);
+        }
+      }
+    }
+    return results;
   }
 }
