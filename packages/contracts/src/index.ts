@@ -1,4 +1,5 @@
-import registryData from "./registry.json";
+import * as registryData from "./registry.json";
+import * as infrastructureData from "./infrastructure.json";
 
 export interface ServiceContract {
   files: string[];
@@ -10,15 +11,39 @@ export interface ServiceDef {
   host: string;
   grpc?: Record<string, ServiceContract>;
   http?: Record<string, { spec: string; port: number }>;
+  events?: any;
 }
 
-export type RegistryType = Record<string, ServiceDef>;
+export interface InfrastructureConfig {
+  rabbitmq: { uri: string; exchanges?: string[] };
+  jaeger: { endpoint: string };
+}
 
-// Экспортируем данные с типом
-export const Registry: RegistryType = registryData.services;
+export interface RegistryConfig {
+  services: Record<string, ServiceDef>;
+  infrastructure: InfrastructureConfig;
+}
 
-// Хелпер для получения gRPC адреса
-// createGrpcAddress(Registry['identity-service'], 'main') -> "identity-service:5000"
+const services: Record<string, ServiceDef> = {
+  ...(registryData.services as any),
+};
+
+Object.keys(services).forEach((key) => {
+  if (key.endsWith("-service")) {
+    const shortName = key.replace("-service", "");
+    const camelName = shortName.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+
+    if (!services[shortName]) {
+      services[shortName] = services[key];
+    }
+  }
+});
+
+export const Registry: RegistryConfig = {
+  services: services,
+  infrastructure: infrastructureData.infrastructure,
+};
+
 export function getGrpcAddress(
   service: ServiceDef,
   interfaceName = "main",
