@@ -4,7 +4,13 @@
     "repository": "ghcr.io/coolcinema/booking-service"
   },
   "service": {
-    "ports": []
+    "ports": [
+      {
+        "name": "grpc",
+        "port": 5000,
+        "protocol": "TCP"
+      }
+    ]
   },
   "ingress": [],
   "env": {}

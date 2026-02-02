@@ -1,0 +1,17 @@
+syntax = "proto3";
+package coolcinema.booking.rpc;
+option go_package = "coolcinema/booking/rpc";
+
+service BookingService {
+  rpc GetUser (GetBookingRequest) returns (GetBookingResponse);
+}
+
+message GetBookingRequest {
+  string id = 1;
+}
+
+message GetBookingResponse {
+  string id = 1;
+  string email = 2;
+  bool is_active = 3;
+}

@@ -63,7 +63,15 @@
       "host": "booking-service",
       "name": "BookingService",
       "slug": "booking-service",
-      "description": "Service description"
+      "description": "Service description",
+      "grpc": {
+        "main": {
+          "files": [
+            "protos/booking-service_grpc_booking.proto"
+          ],
+          "port": 5000
+        }
+      }
     }
   }
 }
