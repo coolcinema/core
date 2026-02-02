@@ -1,0 +1,11 @@
+{
+  "fullnameOverride": "booking-service",
+  "image": {
+    "repository": "ghcr.io/coolcinema/booking-service"
+  },
+  "service": {
+    "ports": []
+  },
+  "ingress": [],
+  "env": {}
+}

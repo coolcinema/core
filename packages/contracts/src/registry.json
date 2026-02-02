@@ -58,6 +58,12 @@
           "hasEvents": true
         }
       }
+    },
+    "booking-service": {
+      "host": "booking-service",
+      "name": "BookingService",
+      "slug": "booking-service",
+      "description": "Service description"
     }
   }
 }
