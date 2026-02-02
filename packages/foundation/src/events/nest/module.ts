@@ -1,3 +1,4 @@
+//  packages/foundation/src/events/nest/module.ts
 import { DynamicModule, Module, Global, Provider } from "@nestjs/common";
 import { AmqpTransport } from "../amqp";
 import { createPublisher } from "../factory";

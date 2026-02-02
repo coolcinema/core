@@ -5,7 +5,7 @@ export * as Grpc from "./grpc";
 export * as Telemetry from "./telemetry";
 
 export * as Http from "./http";
-export * as Events from "./events"; // <-- New
+export * as Events from "./events";
 export * as OpenApi from "./openapi";
 
 export * as z from "zod";

@@ -3,6 +3,7 @@ import amqp, {
   ChannelWrapper,
 } from "amqp-connection-manager";
 import { ConfirmChannel } from "amqplib";
+import { IRegistry } from "../types";
 
 export interface AmqpConfig {
   url?: string;
@@ -12,12 +13,12 @@ export class AmqpTransport {
   private connection: AmqpConnectionManager;
   private channel: ChannelWrapper;
 
-  constructor(registry: any, config?: AmqpConfig) {
-    const url = config?.url || registry.brokers?.rabbitmq;
+  constructor(registry: IRegistry, config?: AmqpConfig) {
+    const url = config?.url || registry.infrastructure?.rabbitmq?.uri;
 
     if (!url) {
       throw new Error(
-        "RabbitMQ URI is not defined. Check registry.json or provide config.",
+        "RabbitMQ URI is not defined in registry.infrastructure.rabbitmq.uri",
       );
     }
 

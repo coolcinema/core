@@ -1,20 +1,26 @@
-import { DynamicModule, Module, Global } from "@nestjs/common"; // Требует @nestjs/common в devDependencies или peerDependencies
+import { DynamicModule, Module, Global } from "@nestjs/common";
 import { createClients } from "../nice/factory";
+import { IRegistry } from "src/types";
 
 @Global()
 @Module({})
 export class GrpcModule {
   static forRoot(
-    registry: any,
+    registry: IRegistry,
     definitions: Record<string, any>,
   ): DynamicModule {
-    // Создаем клиенты через Nice factory
     const clients = createClients(registry, definitions);
 
-    const providers = Object.entries(clients).map(([name, client]) => ({
-      provide: `${name}Service`, // Token: "identityService"
-      useValue: client,
-    }));
+    const providers = Object.entries(clients).map(([name, client]) => {
+      const token = `${name}Service`;
+
+      console.log(`[Foundation] Registering gRPC client: @Inject('${token}')`);
+
+      return {
+        provide: token,
+        useValue: client,
+      };
+    });
 
     return {
       module: GrpcModule,
