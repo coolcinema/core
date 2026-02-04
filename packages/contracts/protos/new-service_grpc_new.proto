@@ -2,7 +2,7 @@ syntax = "proto3";
 package coolcinema.new.rpc;
 option go_package = "coolcinema/new/rpc";
 
-service IdentityService {
+service NewService {
   rpc GetUser (GetUserRequest) returns (GetUserResponse);
 }
 
