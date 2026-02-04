@@ -86,6 +86,20 @@
           "port": 5000
         }
       }
+    },
+    "three-service": {
+      "host": "three-service",
+      "name": "ThreeService",
+      "slug": "three-service",
+      "description": "Service description",
+      "grpc": {
+        "main": {
+          "files": [
+            "protos/three-service_grpc_three.proto"
+          ],
+          "port": 5000
+        }
+      }
     }
   }
 }
