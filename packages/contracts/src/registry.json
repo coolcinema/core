@@ -72,6 +72,20 @@
           "port": 5000
         }
       }
+    },
+    "new-service": {
+      "host": "new-service",
+      "name": "NewService",
+      "slug": "new-service",
+      "description": "Service description",
+      "grpc": {
+        "main": {
+          "files": [
+            "protos/new-service_grpc_new.proto"
+          ],
+          "port": 5000
+        }
+      }
     }
   }
 }
